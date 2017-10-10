@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: de.l3s.souza.word2vecseedfinder.L2RfeaturesTest
+-------------------------------------------------------------------------------
+Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 19.812 sec

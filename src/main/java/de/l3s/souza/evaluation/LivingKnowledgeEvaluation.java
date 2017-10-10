@@ -6,10 +6,18 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.StringTokenizer;
+
+import de.l3s.elasticquery.LivingKnowledgeSnapshot;
 
 public class LivingKnowledgeEvaluation {
 
@@ -17,12 +25,19 @@ public class LivingKnowledgeEvaluation {
 	private static String propFileName = "seedfinder.properties";
 	private  Properties config;
 	private String root = "";
+	private static Map<String,String> documents = new HashMap<String,String>();
+	private static int totalRelevant;
+	private double avPrecision;
 	
-	private static Map<String,Double> documents = new HashMap<String,Double>();
+	public double getAvPrecision() {
+		return avPrecision;
+	}
 	
 	public LivingKnowledgeEvaluation (String topic) throws IOException
 	{		
 		documents.clear();
+		totalRelevant = 0;
+		avPrecision = 0;
 		InputStream inputStream = LivingKnowledgeEvaluation.class.getClassLoader().getResourceAsStream(propFileName);
 		config = new Properties ();
 		
@@ -31,14 +46,14 @@ public class LivingKnowledgeEvaluation {
 		} else {
 			throw new FileNotFoundException("property file '" + propFileName + "' not found in the classpath");
 		}
-		
+	
 		NTCIR_VERSION = config.getProperty("ntcir_task");
-		root = "/home/souza/NTCIR-eval/"+NTCIR_VERSION+"/Evaluation Data/"+topic;
-		
+	//	root = "/home/souza/NTCIR-eval/"+NTCIR_VERSION+"/Evaluation Data/"+topic;
+		root = "/home/souza/NTCIR-eval/"+NTCIR_VERSION+"/TaskData/TIR/"+topic;	
 		walk (root);
 	}
 	
-	public Map<String,Double> getEvaluatedDocuments ()
+	public Map<String,String> getEvaluatedDocuments ()
 	{
 		return documents;
 	}
@@ -55,7 +70,8 @@ public class LivingKnowledgeEvaluation {
 		
 			} else {
 				
-				
+				if (!f.getAbsolutePath().contains(".rel"))
+					continue;
 				FileReader fr = new FileReader (f);
 				BufferedReader br = new BufferedReader (fr);
 				
@@ -63,6 +79,7 @@ public class LivingKnowledgeEvaluation {
 				while ((line = br.readLine()) != null)
 				{
 					StringTokenizer token = new StringTokenizer (line);
+				 
 					while (token.hasMoreTokens())
 					{
 						String rel;
@@ -70,17 +87,128 @@ public class LivingKnowledgeEvaluation {
 						
 						id = token.nextToken();
 						rel = token.nextToken();
-						double relevance;
 						
-						if (rel.contentEquals("L0"))
-							relevance = 0;
-						else
-							relevance = 1;
+						documents.put(id,rel);
 						
-						documents.put(id,relevance);
+						if (!rel.contentEquals("L0")) {
+							totalRelevant++;
+						}
 					}
+				 
 				}
 			}
 		}
+	}
+	
+	public HashMap<String,Double> classifyDocuments (Map<LivingKnowledgeSnapshot,Double> incomingDocuments)
+	{
+		
+		int total = 20;
+		int sum = 0;
+		int i = 0;
+		int relevant = 0;
+		
+		HashMap<String,Double> classified = new HashMap<String,Double>();
+		//HashMap<String,Double>
+		for (LivingKnowledgeSnapshot article : incomingDocuments.keySet())
+		{
+			if (i<total)
+				i++;
+			if (documents.containsKey(article.getDocId()))
+			{
+				String id = article.getDocId();
+				String relevance = documents.get(article.getDocId());
+				
+				double numberRelevance;
+				
+				
+				if (relevance.contentEquals("L0"))
+					numberRelevance = 0;
+				else
+				{
+					numberRelevance = 1;
+					if (i<=total)
+					{
+						relevant++;
+						sum = sum + (relevant / i);
+					}
+				}
+				
+				classified.put(id,numberRelevance);
+			}
+			else
+				classified.put(article.getDocId(), (double)0);
+		}
+		
+		if (relevant==0)
+			 avPrecision = 0.0f;
+		else
+			 avPrecision = (double) sum/total;
+		
+		return classified;
+	}
+	
+	public double getPrecisionAtn (HashMap<LivingKnowledgeSnapshot, Double> docs, int total)
+	{
+		double precision = 0;
+		
+		int i = 0;
+		int relevant = 0;
+		for (LivingKnowledgeSnapshot s: docs.keySet())
+		{
+			if (i>total)
+				break;
+			
+			String relevance = getArticleRelevance (s.getDocId());
+			
+			if (relevance.contentEquals("L1") || (relevance.contentEquals("L2")))
+				relevant++;
+			i++;
+		}
+		
+		precision = (double)relevant/total;
+		
+		return precision;
+	}
+	
+	public String getArticleRelevance (String docID)
+	{
+		if (documents.containsKey(docID))
+			return documents.get(docID);
+		else
+			return "--";
+	}
+	
+	private static Map<String, Double> sortByComparator(HashMap<String, Double> unsortMap, final boolean order)
+	{
+
+	            List<Entry<String, Double>> list = new LinkedList<Entry<String, Double>>(unsortMap.entrySet());
+
+	            // Sorting the list based on values
+	            Collections.sort(list, new Comparator<Entry<String, Double>>()
+	            {
+	                public int compare(Entry<String, Double> o1,
+	                        Entry<String, Double> o2)
+	                {
+	                    if (order)
+	                    {
+	                        return o1.getValue().compareTo(o2.getValue());
+	                    }
+	                    else
+	                    {
+	                        return o2.getValue().compareTo(o1.getValue());
+
+	                    }
+	                }
+	            });
+
+	            // Maintaining insertion order with the help of LinkedList
+	            Map<String, Double> sortedMap = new LinkedHashMap<String, Double>();
+	            for (Entry<String, Double> entry : list)
+	            {
+	                sortedMap.put(entry.getKey(), entry.getValue());
+	            }
+
+	            return sortedMap;
 	}
 }

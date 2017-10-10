@@ -31,8 +31,10 @@ import java.util.StringTokenizer;
 import de.l3s.elasticquery.Article;
 import de.l3s.elasticquery.ElasticMain;
 import de.l3s.elasticquery.LivingKnowledgeSnapshot;
+import de.l3s.souza.evaluation.LivingKnowledgeEvaluation;
 import de.l3s.souza.evaluation.PairDocumentSimilarity;
 import de.l3s.souza.evaluation.ScoreFunctions;
+import de.l3s.souza.output.HtmlOutput;
 import de.l3s.souza.preprocess.PreProcess;
 import de.unihd.dbs.heideltime.standalone.DocumentType;
 import de.unihd.dbs.heideltime.standalone.HeidelTimeStandalone;
@@ -44,12 +46,17 @@ import de.unihd.dbs.uima.annotator.heideltime.resources.Language;
 public class Query 
 {
 	private static final boolean localmode = false;
+	private PreProcess preprocess;
 	private ScoreFunctions urlScoreObject;
+	private HashMap<StringBuilder,Double> sbResults = new HashMap<StringBuilder,Double> ();
+	private HashMap<StringBuilder,Double> sbRes = new HashMap<StringBuilder,Double> ();
+	private HashSet<String> usedQueries = new HashSet<String>();
 	private int terms;
 	private BufferedWriter bw;
 	private int maxSimTerms;
 	private static HeidelTimeStandalone heidelTime;
 	private int maxDoc;
+	private static HashMap <String,String> urls = new HashMap<String,String>();
 	private static ArrayList<String> vowels;
 	private String currentQuery;
 	private static StringBuilder sb = new StringBuilder();
@@ -59,11 +66,11 @@ public class Query
 	private HashMap<String,Integer> queryTerms;
 	private deepLearningUtils deepLearning;
 	private QueryExpansion queryExpansion;
-	private HashMap<String,Article> retrievedDocuments;
+	private HashMap<LivingKnowledgeSnapshot, Double> retrievedDocuments;
 	private static HashSet<String> domains;
 	private HashSet<String> similarTermsLinks;
 	private double beta;
-	private HashMap<Article,Double> finalDocSet;
+	private HashMap<LivingKnowledgeSnapshot, Double> finalDocSet;
 	private HashSet<String> entitiesInLinks;
 	private HashMap<String,Double> entitiesCandidates;
 	private ArrayList<String> entitiesFromBabelFy;
@@ -119,19 +126,50 @@ public class Query
 		return nextQuery;
 	}
 
-	public Query(String topicID,String runname, String initialQuery,int limit,String field,int terms, int maxSimTerms,
+	public Query(String query, String topicID, int maxSimTerms,String field) throws Exception {
+	
+		preprocess = new PreProcess();
+		deepLearning = new deepLearningUtils ("articles.txt");
+		deepLearning.loadModel("/home/souza/ntcir11_models/"+topicID+".txt");
+		articles = new HashMap<LivingKnowledgeSnapshot,Double>();
+		new ElasticMain (query,100,field,"souza_livingknowledge");
+		this.currentQuery = query;
+		currentQuery = preprocess.removeStopWords(currentQuery);
+		currentQuery = preprocess.removePunctuation(currentQuery);
+		processQuery(currentQuery,field,"0");
+		queryExpansion = new QueryExpansion(maxSimTerms,topicID,articles);
+		
+	}
+	
+	public double getAvPrecision ()
+	{
+		return queryExpansion.getAvPrecision();
+	}
+	public HashMap<String,Double> getCandidateTerms () throws Exception
+	{
+		
+		return queryExpansion.getCandidateTerms(deepLearning);
+	}
+	//
+	public Query(int maxUsedFreqTerm,String topicID,String runname, String title, String initialQuery,String titlePlusDescription, int limit,String field,int terms, int maxSimTerms,
 			String eventDate, int maxDoc, int maxIter, double alpha,double beta,double gama,double scoreParam) throws Exception {
 		
 		super();
+		preprocess = new PreProcess();
+		
+		deepLearning = new deepLearningUtils ("articles.txt");
+		//deepLearning.loadModel("/home/souza/Word2VecTrainSources/complete_corpus.txt");
 		this.beta = beta;
 		urlScoreObject = new ScoreFunctions (scoreParam);
 		entitiesCandidates = new HashMap<String,Double>();
 	
-		BufferedWriter res = new BufferedWriter(new FileWriter("/home/souza/NTCIR-eval/ntcir12_Temporalia_taskdata/Evaluation Data/"+topicID+"/"+topicID+"."+runname+".res", true));
-		
+/*		BufferedWriter res = new BufferedWriter(new FileWriter("/home/souza/NTCIR-eval/ntcir12_Temporalia_taskdata/Evaluation Data/"+topicID+"/"+topicID+"."+runname+".res", true));
+		*/
+
+		BufferedWriter res = new BufferedWriter(new FileWriter("/home/souza/NTCIR-eval/ntcir11_Temporalia_taskdata/TaskData/TIR/"+topicID+"/"+topicID+"."+runname+".res", true));
 		bw = new BufferedWriter(new FileWriter("output.txt", true));
 		BufferedWriter out = new BufferedWriter
-    		    (new OutputStreamWriter(new FileOutputStream("SeedFinderDeepLearning.html"),"UTF-8"));
+    		    (new OutputStreamWriter(new FileOutputStream("word2vecseedfinder.html"),"UTF-8"));
 		
 		  sb.append("<html>");
 		    sb.append("<head>");
@@ -167,30 +205,40 @@ public class Query
 	       vowels.add("o");
 	       vowels.add("u");
 		domains = new HashSet<String>();
-		readDomains ();
-	/*	heidelTime = new HeidelTimeStandalone(Language.GERMAN,
-                DocumentType.NEWS,
+		//readDomains ();
+		/*heidelTime = new HeidelTimeStandalone(Language.ENGLISH,
+                DocumentType.SCIENTIFIC,
                 OutputType.TIMEML,
                 "src/main/resources/config.props",
                 POSTagger.TREETAGGER, true);*/
 		this.terms = terms;
 		this.maxSimTerms = maxSimTerms;
 		this.maxDoc = maxDoc;
+		
+		initialQuery = preprocess.removeStopWords(initialQuery);
+		title = preprocess.removeStopWords(title);
+		title = preprocess.removePunctuation(title);
+		initialQuery = preprocess.removePunctuation(initialQuery);
+	//	titlePlusDescription = preprocess.removeStopWords(titlePlusDescription);
+		titlePlusDescription = preprocess.removePunctuation(titlePlusDescription);
 		this.currentQuery = initialQuery;
 		queryTerms = new HashMap<String,Integer>();
-		retrievedDocuments = new HashMap<String,Article>();
+		retrievedDocuments = new HashMap<LivingKnowledgeSnapshot, Double>();
 		similarTermsLinks = new HashSet<String>();
 		new ElasticMain (initialQuery,limit,field,"souza_livingknowledge");
 		articlesWithoutDuplicates = new HashMap<String,Article>();
 		articles = new HashMap<LivingKnowledgeSnapshot,Double>();
-		finalDocSet = new HashMap<Article,Double>();
+		finalDocSet = new HashMap<LivingKnowledgeSnapshot, Double>();
 		addQueryTerms(initialQuery);
-		processQuery(initialQuery,field);
-	//	handleDuplicates(articles);
+		System.out.println ("Processing query: "+initialQuery+" "+"iter: 0");
+		processQuery(initialQuery,field,"0");
+		usedQueries.add(initialQuery);
+		handleDuplicates(articles,"0");
 		
-		deepLearning = new deepLearningUtils ("articles.txt");
-		deepLearning.loadModel("pathToSaveModel.txt");
-	/*	Collection<String> nearest = deepLearning.getWordsNearest("merkel",10);
+		
+		deepLearning.loadModel("/home/souza/ntcir11_models/"+topicID+".txt");
+		
+	/*	Collection<String> nearest = deepLearning.getWordsNearest("trade",10);
 		
 		  for (Iterator iterator = nearest.iterator(); iterator.hasNext();) 
 		  {
@@ -198,8 +246,25 @@ public class Query
 		        System.out.print (element +" ");
 
 		  }*/
+		
+		articles =  urlScoreObject.urlScoreFunction(heidelTime,deepLearning,topicID, eventDate,articles,"0",urls,initialQuery);
+		articles = (HashMap<LivingKnowledgeSnapshot, Double>) sortByComparator(articles,false);
+		
+		queryExpansion = new QueryExpansion(maxUsedFreqTerm,topicID,initialQuery,titlePlusDescription ,articlesWithoutDuplicates, articles, 
+				maxSimTerms, terms,eventDate, alpha, beta);
+
+		LivingKnowledgeEvaluation evaluator = queryExpansion.getLivingKnowledgeEvaluator();
+		
+		double precision = evaluator.getPrecisionAtn(articles, maxDoc);
+		
+		HtmlOutput html = new HtmlOutput ();
+		html.outputArticlesHtml(sb, articles, "0", evaluator,topicID,runname);
+		
+		sbResults.put(html.getSb(), precision);
+		
+		sbRes.put(html.getSbRes(), precision);
+		
 		//deepLearning.trainRetrievedDocuments(articlesWithoutDuplicates, "/home/souza/workspace/deepLearningSeedFinder/articles.txt");
-		queryExpansion = new QueryExpansion(initialQuery, articlesWithoutDuplicates, articles, maxSimTerms, terms,eventDate, alpha, beta);
 		//deepLearning.loadModel("pathToSaveModel.txt");
 
 		populateRetrivedDocuments();
@@ -211,7 +276,10 @@ public class Query
 	//	extractEntitiesFromDocuments();
 		//queryExpansion.extractSimilarTermsQuery(deepLearning, annotations,entitiesCandidates);
 		
-		queryExpansion.extractSimilarTermsUrls(deepLearning,heidelTime,gama);
+		if (field.contentEquals("url"))
+			queryExpansion.extractSimilarTermsUrls(deepLearning,gama);
+		else
+			queryExpansion.extractSimilarTermsText(deepLearning,false);
 		HashSet<String> nextQuery;
 		nextQuery = queryExpansion.getNextQuery();
 		//testBabelFy(articlesWithoutDuplicates);
@@ -219,48 +287,80 @@ public class Query
 		int iter = 1;
 		String currentQueryString;
 	
+		field = "text";
 		while (iter <= maxIter)
 		{
 			
-			currentQueryString = "";
-			Iterator<String> iterator = nextQuery.iterator();
-			int size = nextQuery.size();
-			int position = 0;
-			while (iterator.hasNext()) 
-			{
-			    
-				if (position==size)
-				{
-					currentQueryString = currentQueryString + iterator.next().toString();
-				}
-				else
-					currentQueryString = currentQueryString + iterator.next().toString() + " ";
-				
-				position++;
-				
-			}
+			currentQueryString = addTermsCurrentQuery("",nextQuery);
 	
 			/*currentQueryString = currentQueryString.replaceAll("ue", "ü");
 			currentQueryString = currentQueryString.replaceAll("oe", "ö");
 			currentQueryString = currentQueryString.replaceAll("ae", "ä");*/
+		     //   currentQueryString += " " + initialQuery;
+		        currentQueryString = removeDuplicateQuery (currentQueryString);
+		        currentQueryString = preprocess.removePunctuation(currentQueryString);
+		        currentQueryString = preprocess.removeStopWords(currentQueryString);
+			
+			
+			if (usedQueries.contains(currentQueryString))
+			{
+				if (!usedQueries.contains(title))
+				{
+					currentQueryString = title;
+					queryExpansion.extractSimilarTermsText(deepLearning,false);
+					nextQuery = queryExpansion.getNextQuery();
+					currentQueryString = addTermsCurrentQuery(currentQueryString,nextQuery);	
+				/*	currentQueryString = removeDuplicateQuery (currentQueryString);
+			        currentQueryString = preprocess.removePunctuation(currentQueryString);
+			        currentQueryString = preprocess.removeStopWords(currentQueryString);*/
+				}
+				else
+					{
+						if (!usedQueries.contains(titlePlusDescription))
+						{
+							currentQueryString = titlePlusDescription;
+							queryExpansion.extractSimilarTermsText(deepLearning,false);
+							nextQuery = queryExpansion.getNextQuery();
+							currentQueryString = addTermsCurrentQuery(currentQueryString,nextQuery);
+							/*currentQueryString = removeDuplicateQuery (currentQueryString);
+					        currentQueryString = preprocess.removePunctuation(currentQueryString);
+					        currentQueryString = preprocess.removeStopWords(currentQueryString);*/
+						}
+							else
+						{
+								currentQueryString = currentQueryString + " " + queryExpansion.extractSimilarTermsQuery(deepLearning, currentQueryString);
+								/*currentQueryString = removeDuplicateQuery (currentQueryString);
+						        currentQueryString = preprocess.removePunctuation(currentQueryString);
+						        currentQueryString = preprocess.removeStopWords(currentQueryString); */
+						}
+					}
+			}
 			System.out.println ("Processing query: "+currentQueryString+" "+"iter: "+iter);
 			addQueryTerms(currentQueryString);
-			processQuery(currentQueryString,"url");
-		//	handleDuplicates(articles);
-			populateRetrivedDocuments();
-		
-	/*	if (localmode)
-			deepLearning.trainRetrievedDocuments(articlesWithoutDuplicates, "/Users/tarcisio/Documents/workspace/deepLearningSeedFinder/articles.txt");
-		else
-			deepLearning.train(articlesWithoutDuplicates, "/home/souza/workspace/deepLearningSeedFinder/articles.txt");
-		*/
 			
+				processQuery(currentQueryString,field,Integer.toString(iter));
+				
+			usedQueries.add(currentQueryString);
+			articles = urlScoreObject.urlScoreFunction(heidelTime,deepLearning,topicID, eventDate,articles,Integer.toString(iter),urls,initialQuery);
+		//	if (iter==maxIter)
+				handleDuplicates(articles,Integer.toString(iter));
+			
+			articles = (HashMap<LivingKnowledgeSnapshot, Double>) sortByComparator(articles,false);
+			
+			html.outputArticlesHtml(sb, articles, Integer.toString(iter), evaluator,topicID,runname);
+			populateRetrivedDocuments();
+			
+			sbResults.put(html.getSb(), evaluator.getPrecisionAtn(articles, 20));
+			sbRes.put(html.getSbRes(), evaluator.getPrecisionAtn(articles, 20));
+			
+			System.out.println("Precision: "+evaluator.getPrecisionAtn(articles, 20));
 			queryExpansion.setCurrentQuery(currentQueryString);
-			queryExpansion.setArticlesWithoutDup(articlesWithoutDuplicates);
+			//queryExpansion.setArticlesWithoutDup(articlesWithoutDuplicates);
+			queryExpansion.setArticles(articles);
 		//	extractEntitiesFromDocuments();
 	//		queryExpansion.extractSimilarTermsUrls();
 			
-			queryExpansion.extractSimilarTermsUrls(deepLearning,heidelTime,gama);
+			queryExpansion.extractSimilarTermsText(deepLearning,false);
 			//queryExpansion.extractSimilarTermsQuery(deepLearning, annotations,entitiesCandidates);
 			nextQuery = queryExpansion.getNextQuery();
 			
@@ -270,7 +370,7 @@ public class Query
 		}
 		
 		fitFinalDoc();
-		finalDocSet = urlScoreObject.urlScoreFunction("2002", finalDocSet);
+		finalDocSet = urlScoreObject.urlScoreFunction(heidelTime,deepLearning,topicID, eventDate,finalDocSet,Integer.toString(iter),urls,initialQuery);
 		sortFinalDoc();
 	//	evaluateDocuments();
 	//	sortFinalDoc();
@@ -279,6 +379,7 @@ public class Query
 		
 		sb.append("<table style=\"width:100%\">");
 		sb.append("<tr>");
+		sb.append("<th>Rank</th>");
 		sb.append("<th>Timestamp</th>");
 		sb.append("<th>score</th>");
 		sb.append("<th>article</th>");
@@ -290,20 +391,40 @@ public class Query
 		PairDocumentSimilarity parser = new PairDocumentSimilarity ();
 		HashSet <String> cs = new HashSet<String>();
 		cs = queryExpansion.getCollectionSpecification();
-		int relevance;
+		
 		
 		int articleNumber = 1;
-		for(Entry<Article, Double> s : finalDocSet.entrySet())
+		
+		double higherPrecision = 0;
+		StringBuilder sbFinalRes = new StringBuilder ();
+		for (Entry<StringBuilder,Double> s : sbResults.entrySet())
+		{
+			if (s.getValue() > higherPrecision)
+			{
+				higherPrecision = s.getValue();
+				sb = s.getKey();
+				
+			}
+		}
+		
+		higherPrecision = 0;
+		
+		for (Entry<StringBuilder,Double> s : sbRes.entrySet())
+		{
+			if (s.getValue() > higherPrecision)
+			{
+				higherPrecision = s.getValue();
+				sbFinalRes = s.getKey();
+				
+			}
+		}
+		
+	/*	for(Entry<LivingKnowledgeSnapshot, Double> s : finalDocSet.entrySet())
 		{
 			
-			String article = preprocess.removeStopWords(s.getKey().getText());
-			double sim = parser.getHigherScoreSimilarity(article, cs);
+			String relevance = evaluator.getArticleRelevance(s.getKey().getDocId());
 			
-			if (sim < 0.4)
-				relevance = 0;
-			else
-				relevance = 1;
-			
+		//	sbRes.append(s.getKey().getDocId() + "\n");
 			if (articleNumber > maxDoc)
 				break;
 			String snippet;
@@ -312,20 +433,23 @@ public class Query
 			else
 				snippet = s.getKey().getText().substring(0, 100);
 			BufferedWriter page = new BufferedWriter
-	    		    (new OutputStreamWriter(new FileOutputStream(articleNumber+".html"),"UTF-8"));
+	    		    (new OutputStreamWriter(new FileOutputStream(articleNumber+".txt"),"UTF-8"));
 			sb.append("<tr>");
-			sb.append("<td>" + s.getKey().getTimestamp() + "</td>");
+			sb.append("<td>" + articleNumber + "</td>");
+			sb.append("<td>" + s.getKey().getDate() + "</td>");
 			sb.append("<td>" + s.getKey().getScore() + "</td>");
 			sb.append("<td>" + snippet + "</td>");
 			sb.append("<td>" + relevance + "</td>");
-			sb.append("<td><a href=\"" + articleNumber + ".html"+"\">" + s.getKey().getUrl() + "</a>" + "</td>");
+			sb.append("<td><a href=\"" + articleNumber + ".txt"+"\">" + s.getKey().getUrl() + "</a>" + "</td>");
 			articleNumber++;
-			page.write(s.getKey().getHtml());
+			page.write(s.getKey().getText());
 			page.close();
 		}
 		sb.append("</table>");
-		sb.append("</body></html>");
+		sb.append("</body></html>");*/
 		out.write(sb.toString());
+		res.write(sbFinalRes.toString());
+		res.close();
 		out.close();
 		
 		for(Entry<String, Integer> s : queryTerms.entrySet())
@@ -335,7 +459,7 @@ public class Query
 		}
 	}
 
-	public void readDomains () throws IOException
+/*public void readDomains () throws IOException
 	{
 		File f;
 		if (localmode)			
@@ -354,7 +478,7 @@ public class Query
 		
 		
 	}
-	
+	*/
 	public void addQueryTerms (String q)
 	{
 		StringTokenizer token = new StringTokenizer (q);
@@ -372,64 +496,89 @@ public class Query
 		}	
 	}
 	
-	private void handleDuplicates(HashMap<String, Article> art) throws MalformedURLException {
+	private void handleDuplicates(HashMap<LivingKnowledgeSnapshot, Double> articles2,String iter) throws MalformedURLException {
 		
+		HashMap<LivingKnowledgeSnapshot, Double> artWithDup = new HashMap<LivingKnowledgeSnapshot, Double>();
 		articlesWithoutDuplicates.clear();
 		articlesWithoutDuplicates = new  HashMap<String,Article>();
 		
-		for(Entry<String, Article> s : art.entrySet()) {		
-			URL url = new URL (s.getValue().getUrl());
-			articlesWithoutDuplicates.put(url.getPath(),s.getValue());
+		for(Entry<LivingKnowledgeSnapshot, Double> s : articles2.entrySet()) {		
+			
+			if (urls.containsKey(s.getKey().getUrl()))
+				continue;
+			else
+			{
+				artWithDup.put(s.getKey(),s.getValue());
+				urls.put(s.getKey().getUrl(),iter);
+			}
 		}
+		
+		urls.clear();
+		articles = new HashMap<LivingKnowledgeSnapshot,Double>(artWithDup);
 	
 	}
 	
 	@SuppressWarnings("unchecked")
-	public void processQuery (String query,String field) throws Exception
+	public void processQuery (String query,String field,String iter) throws Exception
 	{
 			 ElasticMain.setKeywords(query);
 			 ElasticMain.setField(field);
 			 ElasticMain.run();
+			 HashMap<LivingKnowledgeSnapshot, Double> currentDocs = new HashMap<LivingKnowledgeSnapshot, Double>();
 			 articles = (HashMap<LivingKnowledgeSnapshot, Double>) ElasticMain.getResults();
+		/*	 
+			 for(Entry<LivingKnowledgeSnapshot, Double> s : currentDocs.entrySet())
+				{
+					//if (!urls.contains(s.getKey().getUrl()))
+						
+					if (!urls.containsKey(s.getKey().getUrl()))
+					{
+						articles.put(s.getKey(), s.getValue());
+						urls.put(s.getKey().getUrl(), iter);
+					}
+				}
+				
+				*/
 	}	
 
 	public void fitFinalDoc ()
 	{
-		for(Entry<String, Article> s : retrievedDocuments.entrySet())
+		for(Entry<LivingKnowledgeSnapshot, Double> s : retrievedDocuments.entrySet())
 		{
 			
-			finalDocSet.put(s.getValue(), s.getValue().getScore());
+			finalDocSet.put(s.getKey(), s.getKey().getScore());
 		}
 	}
 	
 	public void sortFinalDoc ()
 	{
 		
-		Map<Article, Double> ordered = sortByComparator (finalDocSet,false);
+		Map<LivingKnowledgeSnapshot, Double> ordered = sortByComparator (finalDocSet,false);
 		finalDocSet.clear();
-		finalDocSet = (HashMap<Article, Double>) ordered;
+		finalDocSet = (HashMap<LivingKnowledgeSnapshot, Double>) ordered;
 	
 	}
 	public void populateRetrivedDocuments () throws IOException, DocumentCreationTimeMissingException
 	{
 		
-		for(Entry<String, Article> s : articlesWithoutDuplicates.entrySet())
+		for(Entry<LivingKnowledgeSnapshot, Double> s : articles.entrySet())
 		{
-			retrievedDocuments.put(s.getValue().getUrl(), s.getValue());
+			//if (!urls.contains(s.getKey().getUrl()))
+				retrievedDocuments.put(s.getKey(), s.getValue());
 		}
 		
 	}
 	
-	private static Map<Article, Double> sortByComparator(Map<Article, Double> unsortMap, final boolean order)
+	private static Map<LivingKnowledgeSnapshot, Double> sortByComparator(Map<LivingKnowledgeSnapshot, Double> unsortMap, final boolean order)
 	{
 
-	            List<Entry<Article, Double>> list = new LinkedList<Entry<Article, Double>>(unsortMap.entrySet());
+	            List<Entry<LivingKnowledgeSnapshot, Double>> list = new LinkedList<Entry<LivingKnowledgeSnapshot, Double>>(unsortMap.entrySet());
 
 	            // Sorting the list based on values
-	            Collections.sort(list, new Comparator<Entry<Article, Double>>()
+	            Collections.sort(list, new Comparator<Entry<LivingKnowledgeSnapshot, Double>>()
 	            {
-	                public int compare(Entry<Article, Double> o1,
-	                        Entry<Article, Double> o2)
+	                public int compare(Entry<LivingKnowledgeSnapshot, Double> o1,
+	                        Entry<LivingKnowledgeSnapshot, Double> o2)
 	                {
 	                    if (order)
 	                    {
@@ -444,8 +593,8 @@ public class Query
 	            });
 
 	            // Maintaining insertion order with the help of LinkedList
-	            Map<Article, Double> sortedMap = new LinkedHashMap<Article, Double>();
-	            for (Entry<Article, Double> entry : list)
+	            Map<LivingKnowledgeSnapshot, Double> sortedMap = new LinkedHashMap<LivingKnowledgeSnapshot, Double>();
+	            for (Entry<LivingKnowledgeSnapshot, Double> entry : list)
 	            {
 	                sortedMap.put(entry.getKey(), entry.getValue());
 	            }
@@ -453,5 +602,52 @@ public class Query
 	            return sortedMap;
 	}
 	
+	public String removeDuplicateQuery (String currentQ)
+	{
+		String queryOutput ="";
+		HashSet<String> queryTerms = new HashSet<String> ();
+		
+		StringTokenizer cQuery = new StringTokenizer (currentQ);
+		
+		while (cQuery.hasMoreTokens())
+		{
+			String cTerm = cQuery.nextToken();
+			if (!queryTerms.contains(cTerm))
+			{
+				queryOutput += " " + cTerm;
+				queryTerms.add(cTerm);
+			}
+		}
+		
+		return queryOutput;
+				
+		
+		
+	}
+	
+	public String addTermsCurrentQuery (String currentQuery,HashSet<String> nextQ)
+	{
+		
+		
+		Iterator<String> iterator = nextQ.iterator();
+		int size = nextQ.size();
+		int position = 0;
+		while (iterator.hasNext()) 
+		{
+		    
+			if (position==size)
+			{
+				currentQuery = currentQuery + iterator.next().toString();
+			}
+			else
+				currentQuery = currentQuery + iterator.next().toString() + " ";
+			
+			position++;
+			
+		}
+		
+		return currentQuery;
+		
+	}
 	
 }

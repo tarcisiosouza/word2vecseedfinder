@@ -14,12 +14,14 @@ public class LivingKnowledgeEvalTest extends TestCase {
 
 	public void testApp() throws Exception
     {
-    	LivingKnowledgeEvaluation lkEval = new LivingKnowledgeEvaluation ("001a");
+    /*	LivingKnowledgeEvaluation lkEval = new LivingKnowledgeEvaluation ("001a");
     	Map<String,Double> docs = lkEval.getEvaluatedDocuments();
     	
     	for (Entry<String, Double> s : docs.entrySet() )
     	{
     		System.out.println(s.getKey() + " " + s.getValue());
     	}
+    	*/
     }
+    
 }

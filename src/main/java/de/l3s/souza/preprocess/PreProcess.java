@@ -24,7 +24,7 @@ public class PreProcess {
 		 
 		 try 
   	   	  {
-  	   	   File fl = new File("/home/souza/stopwords_de.txt");
+  	   	   File fl = new File("/home/souza/stopwords_en.txt");
      	//	File fl = new File("/home/souza/stopwords_de.txt");
   	   	   BufferedReader br = new BufferedReader(new FileReader(fl)) ;
   	   	   String string;
@@ -100,24 +100,27 @@ public class PreProcess {
 			int position = 0;
 			String currentChar;
 			
-			if (stopwords.contains(str.toLowerCase()) || str.length()<=2 || isNumberConcatChar(str))
+			if (stopwords.contains(str.toLowerCase()) || str.length()<=2)
 				return false;
-				while (position < str.length())
+			
+			try {
+				
+				int number = Integer.parseInt(str);
+				if (str.length()>4)
 				{
-					
-					try {
-						Integer.parseInt(String.valueOf(str.charAt(position)));
+					int year = Integer.parseInt(str.substring(0, 4));
+					if (year < 1970)
 						return false;
-					} catch (NumberFormatException ex) {
-						
-						currentChar = String.valueOf(str.charAt(position));
-						
-						if (vowels.contains(currentChar.toLowerCase()))
-							return true;
-					}
-					position++;
 				}
-				return false;
+				else
+					if (number < 1970)
+						return false;
+			} catch (Exception e)
+			{
+				
+				
+			}
+				return true;
 		}
 		
 		
@@ -137,6 +140,57 @@ public class PreProcess {
 			return false;
 			
 		}
+		
+		public String removePunctuation (String str)
+		{
+			String newStr = "";
+			for (int i=0;i<str.length();i++)
+			{
+				if (Character.isSpaceChar(str.charAt(i)) || Character.isAlphabetic(str.charAt(i)))
+					newStr = newStr + str.charAt(i);
+			}
+			
+			return newStr;
+			
+		}
+		
+		public String removeNonLettersString (String incomingStr)
+		{
+			String newStr = "";
+			char[] incomingStrChar = incomingStr.toCharArray();
+			for (int i=0;i<incomingStrChar.length;i++)
+			{
+				Character character = incomingStrChar[i];
+				if (Character.isAlphabetic(character))
+					newStr = newStr + character;
+			}
+			return newStr;
+		}
+		
+		public String removeNonLettersFromText (String text)
+		{
+			String newText = "";
+			char[] strChar;
+			
+			strChar = text.toCharArray();
+				
+			for (int i=0;i<strChar.length;i++)
+			{
+				if (Character.isLetterOrDigit(strChar[i]) || Character.isWhitespace(strChar[i]) || strChar[i]=='’')
+					newText = newText + strChar[i];
+				
+				if (!(Character.isLetterOrDigit(strChar[i])) && !(Character.isWhitespace(strChar[i])) && ((i+1)<strChar.length) 
+						&& strChar[i]!='’')
+				{
+					if (Character.isLetterOrDigit(strChar[i+1]))
+						newText = newText + " ";
+				}
+			}
+			
+			return newText;
+			
+		}
+		
 		public static boolean isNumber (String str)
 		{
 		

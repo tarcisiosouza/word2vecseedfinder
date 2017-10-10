@@ -25,10 +25,13 @@ public class RunApplication {
 	private static double gama;
 	private static double scoreParam;
 	private static String runname;
+	private static int maxUsedFreqTerm;
+	private static deepLearningUtils deepLearning;
 	
 	public static void main (String args[]) throws Exception
 	{
 		
+	
 		InputStream inputStream = RunApplication.class.getClassLoader().getResourceAsStream(propFileName);
 		config = new Properties ();
 		
@@ -39,6 +42,7 @@ public class RunApplication {
 		}
 		
 		limit = Integer.parseInt(config.getProperty("limit"));
+		maxUsedFreqTerm = Integer.parseInt(config.getProperty("maxUsedFreqTerm"));
 		maxSimTerms = Integer.parseInt(config.getProperty("maxSimTerms"));
 		maxDoc = Integer.parseInt(config.getProperty("maxDoc"));
 		field =config.getProperty("field");
@@ -50,15 +54,18 @@ public class RunApplication {
 		scoreParam = Double.parseDouble(config.getProperty("scoreParam"));
 		runname = config.getProperty("runname");
 		
-		File file = new File ("/home/souza/NTCIR-eval/ntcir12_Temporalia_taskdata/Test Collection/NTCIR12_Temporalia2_FormalRun_TDR_En.txt");
+		//File file = new File ("/home/souza/NTCIR-eval/ntcir12_Temporalia_taskdata/Test Collection/NTCIR12_Temporalia2_FormalRun_TDR_En.txt");
+		File file = new File ("/home/souza/NTCIR-eval/ntcir11_Temporalia_taskdata/TaskData/TIR/NTCIR-11TIRTopicsFormalRun.txt");
+
 		FileReader fr = new FileReader (file);
 		BufferedReader br = new BufferedReader (fr);
 		String id;
-		String description;
+		String description = null;
 		String query_time = null;
-		String title;
+		String title = null;
 		String line;
 		String topic;
+		String atempQuery="";
 		
 		while ((line=br.readLine())!=null)
 		{
@@ -112,9 +119,19 @@ public class RunApplication {
 				line = line.substring(i, line.length());
 				initialQuery = line;
 				
+				if (topic.contains("a"))
+					atempQuery = initialQuery;
 				
-				Query query = new Query (topic,runname,initialQuery,limit,field,terms,maxSimTerms,query_time,maxDoc,
+				System.out.println("Current topic: "+topic);
+				int number = Integer.parseInt(topic.substring(0,3));
+				/*if (number < 16)
+					continue;*/
+			/*	if (topic.contentEquals("001p"))
+				{*/
+					Query query = new Query (maxUsedFreqTerm,topic,runname,title,title+" "+description+" "+initialQuery,title+" "+description,limit,field,terms,maxSimTerms,query_time,maxDoc,
 						maxIter,alpha,beta,gama,scoreParam);
+			/*	break;	
+				}*/
 			}
 			
 			
