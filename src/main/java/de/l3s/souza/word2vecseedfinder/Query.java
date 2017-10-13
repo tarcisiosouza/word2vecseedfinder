@@ -52,6 +52,7 @@ public class Query
 	private HashMap<StringBuilder,Double> sbRes = new HashMap<StringBuilder,Double> ();
 	private HashSet<String> usedQueries = new HashSet<String>();
 	private int terms;
+	private ElasticMain elasticUtil;
 	private BufferedWriter bw;
 	private int maxSimTerms;
 	private static HeidelTimeStandalone heidelTime;
@@ -74,6 +75,9 @@ public class Query
 	private HashSet<String> entitiesInLinks;
 	private HashMap<String,Double> entitiesCandidates;
 	private ArrayList<String> entitiesFromBabelFy;
+	private String field;
+	private String topic;
+	private int limit;
 	public HashMap<String, Article> getArticlesWithoutDuplicates() {
 		return articlesWithoutDuplicates;
 	}
@@ -87,7 +91,18 @@ public class Query
 		return currentQuery;
 	}
 	
+	public void setCurrentQueryID (String query)
+	{
+		currentQuery = query;
+	}
+	public PreProcess getPreprocess() {
+		return preprocess;
+	}
+
 	public void setCurrentQuery(String currentQuery) {
+		this.currentQuery = currentQuery;
+		currentQuery = preprocess.removeStopWords(currentQuery);
+		currentQuery = preprocess.removePunctuation(currentQuery);
 		this.currentQuery = currentQuery;
 	}
 	
@@ -126,21 +141,40 @@ public class Query
 		return nextQuery;
 	}
 
-	public Query(String query, String topicID, int maxSimTerms,String field) throws Exception {
+	public Query(int totalDocuments,String field) throws Exception {
 	
 		preprocess = new PreProcess();
+		elasticUtil = new ElasticMain ("",limit,field,"souza_livingknowledge");
+		this.field=field;
+		setLimit(totalDocuments);
+	
 		deepLearning = new deepLearningUtils ("articles.txt");
-		deepLearning.loadModel("/home/souza/ntcir11_models/"+topicID+".txt");
+		
 		articles = new HashMap<LivingKnowledgeSnapshot,Double>();
-		new ElasticMain (query,100,field,"souza_livingknowledge");
-		this.currentQuery = query;
-		currentQuery = preprocess.removeStopWords(currentQuery);
-		currentQuery = preprocess.removePunctuation(currentQuery);
-		processQuery(currentQuery,field,"0");
-		queryExpansion = new QueryExpansion(maxSimTerms,topicID,articles);
+		
 		
 	}
 	
+	public String getTopic() {
+		return topic;
+	}
+
+	
+	public void setTopic(String topic) {
+		this.topic = topic;
+		deepLearning.loadModel("/home/souza/ntcir11_models/"+topic+".txt");
+	}
+
+	public void processCurrentQuery () throws Exception
+	{
+		processQuery(currentQuery,field,"0");
+		queryExpansion = new QueryExpansion(maxSimTerms,topic,articles,preprocess);
+	}
+	
+	public HashMap<LivingKnowledgeSnapshot, Double> getArticles() {
+		return articles;
+	}
+
 	public double getAvPrecision ()
 	{
 		return queryExpansion.getAvPrecision();
@@ -459,7 +493,16 @@ public class Query
 		}
 	}
 
-/*public void readDomains () throws IOException
+public int getLimit() {
+		return limit;
+	}
+
+	public void setLimit(int limit) {
+		this.limit = limit;
+		elasticUtil.setLimit(limit);
+	}
+
+	/*public void readDomains () throws IOException
 	{
 		File f;
 		if (localmode)			
@@ -521,9 +564,10 @@ public class Query
 	@SuppressWarnings("unchecked")
 	public void processQuery (String query,String field,String iter) throws Exception
 	{
-			 ElasticMain.setKeywords(query);
-			 ElasticMain.setField(field);
-			 ElasticMain.run();
+			 elasticUtil.setKeywords(query);
+			 elasticUtil.setField(field);
+			
+			 elasticUtil.run();
 			 HashMap<LivingKnowledgeSnapshot, Double> currentDocs = new HashMap<LivingKnowledgeSnapshot, Double>();
 			 articles = (HashMap<LivingKnowledgeSnapshot, Double>) ElasticMain.getResults();
 		/*	 
@@ -540,6 +584,15 @@ public class Query
 				
 				*/
 	}	
+
+	public String getField() {
+		return field;
+	}
+
+	public void setField(String field) {
+		this.field = field;
+		elasticUtil.setField(field);
+	}
 
 	public void fitFinalDoc ()
 	{
@@ -567,6 +620,11 @@ public class Query
 				retrievedDocuments.put(s.getKey(), s.getValue());
 		}
 		
+	}
+	
+	public void closeConnection ()
+	{
+		elasticUtil.closeConnection();
 	}
 	
 	private static Map<LivingKnowledgeSnapshot, Double> sortByComparator(Map<LivingKnowledgeSnapshot, Double> unsortMap, final boolean order)

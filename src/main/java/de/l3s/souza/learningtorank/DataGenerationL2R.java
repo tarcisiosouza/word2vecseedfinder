@@ -14,6 +14,7 @@ import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import de.l3s.elasticquery.LivingKnowledgeSnapshot;
 import de.l3s.souza.word2vecseedfinder.Query;
 
 public class DataGenerationL2R {
@@ -35,10 +36,11 @@ public class DataGenerationL2R {
 		private static double lambda;
 		private static int windowsize;
 		private static int windowsizePRF;
-		private static int feedbackDocuments;
+		private static int totalFeedbackDocuments;
 		
 		public static void main (String args[]) throws Exception
 		{
+			
 			
 			InputStream inputStream = DataGenerationL2R.class.getClassLoader().getResourceAsStream(propFileName);
 			config = new Properties ();
@@ -53,15 +55,17 @@ public class DataGenerationL2R {
 			lambda = Double.parseDouble(config.getProperty("lambda"));
 			windowsize=Integer.parseInt(config.getProperty("windowsize"));
 			windowsizePRF=Integer.parseInt(config.getProperty("windowsizePRF"));
-			feedbackDocuments=Integer.parseInt(config.getProperty("feedbackDocuments"));
+			totalFeedbackDocuments=Integer.parseInt(config.getProperty("feedbackDocuments"));
 			candidateTerms = Integer.parseInt(config.getProperty("candidateTerms"));
-			BufferedWriter res = new BufferedWriter(new FileWriter("/home/souza/trainL2R.txt", true));
+			BufferedWriter res = new BufferedWriter(new FileWriter("/home/souza/trainL2R_final.txt", true));
 			StringBuilder sb = new StringBuilder ();
 			File file = new File ("/home/souza/NTCIR-eval/ntcir11_Temporalia_taskdata/TaskData/TIR/NTCIR-11TIRTopicsFormalRun.txt");
 			FileReader fr = new FileReader (file);
 			BufferedReader br = new BufferedReader (fr);
 			String line;
 			int subtopicNumber = 0;
+			
+			Query query = new Query (totalFeedbackDocuments,"text");
 			
 			while ((line=br.readLine())!=null)
 			{
@@ -129,12 +133,17 @@ public class DataGenerationL2R {
 					}
 					System.out.println("Current topic: "+topic);
 					int number = Integer.parseInt(topic.substring(0,3));
-					
-					//String query, String topicID, int maxSimTerms,String field
-				/*	if (subtopicNumber == 1)
-					{*/
-						Query query = new Query (initialQuery,topic,feedbackDocuments,"text");
-						System.out.println(query.getCurrentQuery());
+						
+					/*if ((!topic.contentEquals("001a")) && (!topic.contentEquals("001p")))
+							break;*/
+						//System.out.println(query.getCurrentQuery());
+						query.setTopic(topic);
+						query.setCurrentQuery(initialQuery);
+						query.setLimit(totalFeedbackDocuments);
+						query.setField("text");
+						query.processCurrentQuery();
+						initialQuery = query.getCurrentQuery();
+						
 						double initialAvPrec = query.getAvPrecision();
 						HashMap<String,Double> terms = query.getCandidateTerms();
 						
@@ -142,54 +151,43 @@ public class DataGenerationL2R {
 						for (Entry<String, Double> s:terms.entrySet() )
 						{
 							termsTotal++;
-							Query expQuery = new Query(initialQuery+" "+s.getKey(),topic,feedbackDocuments,"text");
-							System.out.println(expQuery.getCurrentQuery());
-							double currentAvPrec = expQuery.getAvPrecision();
+							query.setCurrentQuery(initialQuery+" "+s.getKey());
+							query.setLimit(totalFeedbackDocuments);
+							query.setField("text");
+							query.processCurrentQuery();
+							//Query expQuery = new Query(initialQuery+" "+s.getKey(),topic,totalFeedbackDocuments,"text");
+						//	System.out.println(expQuery.getCurrentQuery());
+							double currentAvPrec = query.getAvPrecision();
+							
 							if ((currentAvPrec - initialAvPrec) >= 0)
 								relevance = 1;
 							else
 								relevance = 0;
+							
 							Term term = new Term(s.getKey());
 							TermUtils termUtils = new TermUtils (topic,"/home/souza/NTCIR-eval/ntcir11_Temporalia_taskdata/TaskData/TIR/",term,windowsize,lambda,features);
-							term = termUtils.calculateL2Rfeatures(initialQuery);
+							term = termUtils.calculateL2Rfeatures(initialQuery,query,totalFeedbackDocuments);
 							HashMap<Integer,Double> features = new HashMap<Integer,Double>();
 							
 							features = term.getFeaturesVector();
 							sb.append(relevance+" "+"qid:"+query_id+" ");
 							int indice = 0;
 							
-							
 							for (Entry<Integer,Double> feature : features.entrySet())
 							{
-								if (i<=features.size())
+								if (indice<=features.size())
 									sb.append(feature.getKey()+":"+feature.getValue() + " ");
 								else
 									sb.append(feature.getKey()+":"+feature.getValue());
 								indice++;
 							}
 								
-							sb.append("\n");
+							sb.append(" #"+term.getTermString()+"\n");
 							
 							if (termsTotal > candidateTerms)
 								break;
 						}
-						
-						
-					//}
-				//	HashMap<String,Double> terms = new HashMap<String,Double>();
-					
-					
-					/*if (number < 16)
-						continue;*/
-				/*	if (topic.contentEquals("001p"))
-					{*/
-			/*			Query query = new Query (maxUsedFreqTerm,topic,runname,title,title+" "+description+" "+initialQuery,title+" "+description,limit,field,terms,maxSimTerms,query_time,maxDoc,
-							maxIter,alpha,beta,gama,scoreParam);*/
-				/*	break;	
-					}*/
-					
-					if (subtopicNumber == 4)
-						subtopicNumber = 0;
+			
 				}
 				
 				
@@ -197,6 +195,7 @@ public class DataGenerationL2R {
 				
 			}
 			
+			query.closeConnection();
 			res.write(sb.toString());
 			res.close();
 			

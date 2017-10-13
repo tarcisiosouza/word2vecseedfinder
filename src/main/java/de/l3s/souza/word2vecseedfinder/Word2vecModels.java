@@ -64,7 +64,7 @@ public class Word2vecModels {
 							continue;
 
 						new ElasticMain(id, 1, "id", "souza_livingknowledge");
-						ElasticMain.run();
+					//	ElasticMain.run();
 						Map<LivingKnowledgeSnapshot, Double> documents = new HashMap<LivingKnowledgeSnapshot, Double>();
 						documents = (Map<LivingKnowledgeSnapshot, Double>) ElasticMain.getResults();
 

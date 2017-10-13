@@ -38,16 +38,17 @@ public class LivingKnowledgeEvaluation {
 		documents.clear();
 		totalRelevant = 0;
 		avPrecision = 0;
-		InputStream inputStream = LivingKnowledgeEvaluation.class.getClassLoader().getResourceAsStream(propFileName);
+	//	InputStream inputStream = LivingKnowledgeEvaluation.class.getClassLoader().getResourceAsStream(propFileName);
 		config = new Properties ();
 		
-		if (inputStream != null) {
+	/*	if (inputStream != null) {
 			config.load(inputStream);
 		} else {
 			throw new FileNotFoundException("property file '" + propFileName + "' not found in the classpath");
 		}
-	
-		NTCIR_VERSION = config.getProperty("ntcir_task");
+	*/
+		//NTCIR_VERSION = config.getProperty("ntcir_task");
+		NTCIR_VERSION = "ntcir11_Temporalia_taskdata";
 	//	root = "/home/souza/NTCIR-eval/"+NTCIR_VERSION+"/Evaluation Data/"+topic;
 		root = "/home/souza/NTCIR-eval/"+NTCIR_VERSION+"/TaskData/TIR/"+topic;	
 		walk (root);
@@ -96,6 +97,7 @@ public class LivingKnowledgeEvaluation {
 					}
 				 
 				}
+				br.close();
 			}
 		}
 	}
@@ -104,15 +106,16 @@ public class LivingKnowledgeEvaluation {
 	{
 		
 		int total = 20;
-		int sum = 0;
+		double sum = 0.0f;
 		int i = 0;
 		int relevant = 0;
+		double precision;
 		
 		HashMap<String,Double> classified = new HashMap<String,Double>();
 		//HashMap<String,Double>
 		for (LivingKnowledgeSnapshot article : incomingDocuments.keySet())
 		{
-			if (i<total)
+			if (i<=total)
 				i++;
 			if (documents.containsKey(article.getDocId()))
 			{
@@ -123,21 +126,39 @@ public class LivingKnowledgeEvaluation {
 				
 				
 				if (relevance.contentEquals("L0"))
+				{
 					numberRelevance = 0;
+					if (i<=total)
+					{
+						precision = relevant / i;
+						sum +=precision;
+						
+					}
+				}
 				else
 				{
 					numberRelevance = 1;
 					if (i<=total)
 					{
 						relevant++;
-						sum = sum + (relevant / i);
+						precision = (double) relevant/i;
+						sum = sum + precision;
+						
 					}
 				}
 				
 				classified.put(id,numberRelevance);
 			}
 			else
+			{
 				classified.put(article.getDocId(), (double)0);
+				if (i<=total)
+				{
+					precision = relevant / i;
+					sum +=precision;
+				}
+			}
+			
 		}
 		
 		if (relevant==0)

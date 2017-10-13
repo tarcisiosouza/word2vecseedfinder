@@ -91,10 +91,11 @@ public class QueryExpansion {
 	{
 		return LivingKnowledgeEvaluator.getAvPrecision();
 	}
-	public QueryExpansion (int maxSimTerms, String topicID, HashMap<LivingKnowledgeSnapshot,Double> articles) throws IOException
+	public QueryExpansion (int maxSimTerms, String topicID, HashMap<LivingKnowledgeSnapshot,Double> articles,PreProcess preprocess) throws IOException
 	{
-		preprocess = new PreProcess ();
+		
 		this.topicID = topicID;
+		this.preprocess=preprocess;
 		LivingKnowledgeEvaluator = new LivingKnowledgeEvaluation (topicID);
 		this.articles = articles;
 		LivingKnowledgeEvaluator.classifyDocuments(articles);
@@ -339,6 +340,18 @@ public class QueryExpansion {
 		}
 			
 	}
+	
+	
+	public PreProcess getPreprocess() {
+		return preprocess;
+	}
+
+
+	public void setPreprocess(PreProcess preprocess) {
+		this.preprocess = preprocess;
+	}
+
+
 	public HashMap<String,Double> getCandidateTerms (deepLearningUtils deepLearning) throws Exception
 	{
 		int pseudoRelevantDoc = 0;
@@ -374,8 +387,15 @@ public class QueryExpansion {
 				while (tokenTerm.hasMoreTokens())
 				{
 					String currentTokenTerm = tokenTerm.nextToken();
+					currentTokenTerm = preprocess.removeNonLettersString(currentTokenTerm);
+					
+					
+					if (currentTokenTerm.length()<=2)
+						continue;
+					
 					if (preprocess.isStopWord(currentTokenTerm))
 						continue;
+					
 					Collection<String> nearest = deepLearning.getWordsNearest(currentTokenTerm, 60);
 				
 					if (term.length()<=2)
@@ -391,6 +411,16 @@ public class QueryExpansion {
 						
 							String currentNearest = iteratorNearest.next();
 							double cos = deepLearning.getCosSimilarity(currentNearest, term);
+							currentNearest = preprocess.removeNonLettersString(currentNearest);
+							
+							
+							if (currentNearest.length()<=2)
+								continue;
+							
+							if (preprocess.isStopWord(currentNearest))
+								continue;
+							
+							
 							urlTerms.put(currentNearest,cos);
 						
 						}

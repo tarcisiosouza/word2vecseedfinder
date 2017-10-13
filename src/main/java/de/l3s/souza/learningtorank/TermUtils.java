@@ -16,15 +16,17 @@ import java.util.StringTokenizer;
 import de.l3s.elasticquery.ElasticMain;
 import de.l3s.elasticquery.LivingKnowledgeSnapshot;
 import de.l3s.souza.preprocess.PreProcess;
+import de.l3s.souza.word2vecseedfinder.Query;
 
 public class TermUtils {
 
 	private String path;
+	private Query queryObject;
 	private static String topic;
 	private static String features;
 	private int pairCount = 0;
 	private Term term;
-	private PreProcess preprocess;
+	
 	private String query;
 	private HashSet<String> queryTerms = new HashSet<String>();
 	private int windowSize;
@@ -40,7 +42,7 @@ public class TermUtils {
 	private int ftf = 0;
 	private ArrayList<Integer> positionsTerm = new ArrayList<Integer>();
 	private ArrayList<Integer> positionsQueryTerms = new ArrayList<Integer>();
-	
+	private HashMap<LivingKnowledgeSnapshot,Double> feedbackDocuments = new HashMap<LivingKnowledgeSnapshot,Double> ();
 	public TermUtils (String topic, String path, Term term, int windowSize,double lambda, String features)
 	{
 		this.term = term;
@@ -49,12 +51,14 @@ public class TermUtils {
 		this.path = path;
 		this.lambda = lambda;
 		this.windowSize = windowSize;
-		preprocess = new PreProcess ();
+		
 	}
 	
-	public Term calculateL2Rfeatures (String query) throws IOException
+	public Term calculateL2Rfeatures (String queryString, Query queryObject,int totalFeedbackDocuments) throws Exception
 	{
-		this.query = query;
+		
+		this.query = queryString;
+		this.queryObject = queryObject;
 		StringTokenizer tokenQuery = new StringTokenizer (query);
 		
 		while (tokenQuery.hasMoreTokens())
@@ -76,7 +80,7 @@ public class TermUtils {
 		withinWindowSize = false;
 		ftf = 0;
 		
-		calculateFeatures (query,50,"text",windowSize);
+		calculateFeatures (query,totalFeedbackDocuments,"text",windowSize);
 		term.setCoOcurrencyQueryPrf(coOcurr,15);
 		term.setPairCoOccurQueryPrf(pairCoOccurr,16);
 		term.setFeedbackTermFreq(tf,12);
@@ -123,7 +127,7 @@ public class TermUtils {
 	
 	}
 
-	private void calculateFeaturesCollection() throws IOException
+	private void calculateFeaturesCollection() throws Exception
 	{
 
 		String filePath = path + topic + "/" + topic + ".rel";
@@ -184,6 +188,7 @@ public class TermUtils {
 		term.setLogTfIdf(18);
 		term.setLogTfDf(19);
 		
+		br.close();
 	}
 	
 	private int calculatePairCoOcurr (ArrayList<Integer>queryTerms, ArrayList<Integer>terms)
@@ -225,12 +230,20 @@ public class TermUtils {
 		return pairCoOccurr;
 	}
 	
-	private void calculateFeatures (String q, int limit, String field,int windowSize) throws IOException
+	private void calculateFeatures (String q, int limit, String field,int windowSize) throws Exception
 	{
-		new ElasticMain(q, limit, field,"souza_livingknowledge");
-		ElasticMain.run();
+		
+		if (limit==1)
+		{
+			queryObject.setCurrentQueryID(q);
+			queryObject.setLimit(limit);
+			queryObject.setField(field);
+			queryObject.processCurrentQuery();
+		}
 		Map<LivingKnowledgeSnapshot, Double> documents = new HashMap<LivingKnowledgeSnapshot, Double>();
-		documents = (Map<LivingKnowledgeSnapshot, Double>) ElasticMain.getResults();
+		
+		documents = queryObject.getArticles();
+		
 		
 		int i=0;
 		int j=0;
@@ -250,7 +263,7 @@ public class TermUtils {
 			String currentTerm = null;
 			int position = 0;
 			
-			article = preprocess.removeNonLettersFromText(article);
+			article = queryObject.getPreprocess().removeNonLettersFromText(article);
 			
 			if (article.contains(term.getTermString()))
 			{

@@ -262,9 +262,11 @@ public class Term {
 	{
 		if (df == 0)
 			logDf = 0;
-		logDf = Math.log(df);
+		else logDf = Math.log(df);
 		updateMinMax(logDf);
 		featuresVector.put(index,logDf);
+		
+		
 	}
 	
 	public void setLogTf (int index)
@@ -286,7 +288,11 @@ public class Term {
 		else
 		logIdf = Math.log(idf);
 		updateMinMax(logIdf);
+		
+		if (logIdf <0)
+			logIdf = Math.abs(logIdf);
 		featuresVector.put(index,logIdf);
+		
 	}
 	
 	public int getDf() {
