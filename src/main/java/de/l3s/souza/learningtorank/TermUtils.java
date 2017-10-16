@@ -89,6 +89,40 @@ public class TermUtils {
 		return term;
 	}
 
+	public Term calculateL2Rfeatures (String queryString,int totalFeedbackDocuments) throws Exception
+	{
+		
+		this.query = queryString;
+		
+		StringTokenizer tokenQuery = new StringTokenizer (query);
+		
+		while (tokenQuery.hasMoreTokens())
+		{
+			String currentQueryTerm = tokenQuery.nextToken();
+			//currentQueryTerm = preprocess.removeNonLettersString(currentQueryTerm);
+			queryTerms.add(currentQueryTerm.toLowerCase());
+		}
+
+		calculateFeaturesCollection();
+		
+		windowSize = 15;
+		nDocuments=0;
+		tf=0;
+		pairCoOccurr =0;
+		coOcurr =0;
+		df=0;
+		termProx = 0;
+		withinWindowSize = false;
+		ftf = 0;
+		
+		calculateFeatures (query,totalFeedbackDocuments,"text",windowSize);
+		term.setCoOcurrencyQueryPrf(coOcurr,15);
+		term.setPairCoOccurQueryPrf(pairCoOccurr,16);
+		term.setFeedbackTermFreq(tf,12);
+		term.setLogFeedbackTermFreq(13);
+	//	term.normalizeFeatures(features);
+		return term;
+	}
 	public static String getTopic() {
 		return topic;
 	}
@@ -317,7 +351,7 @@ public class TermUtils {
 						withinWindowSize = true;
 				}
 				
-				break;
+			//	break;
 			}
 		}
 		
@@ -326,4 +360,241 @@ public class TermUtils {
 		
 	}
 	
+	public void calculateFeaturesCollectionOnline () throws Exception
+	{
+		
+			Map<LivingKnowledgeSnapshot, Double> documents = new HashMap<LivingKnowledgeSnapshot, Double>();
+		
+			String filePath = path + topic + "/" + topic + ".rel";
+			df = 0;
+			nDocuments = 0;
+			
+			double idf = 0.0f;
+			boolean withinWindowSize;
+			File f = new File (filePath);
+			FileReader fr = new FileReader (f);
+			BufferedReader br = new BufferedReader (fr);
+			//term.setTermString(term.getTermString().toLowerCase());
+			
+			String line;
+			
+			while ((line = br.readLine()) != null)
+			{
+				
+				StringTokenizer token = new StringTokenizer (line);
+				while (token.hasMoreTokens())
+				{
+					String rel;
+					String id;
+							
+					id = token.nextToken();
+					rel = token.nextToken();
+					Query query = new Query (1,"id");
+					query.setCurrentQueryID(id);
+					query.setLimit(1);
+					query.setField("id");
+					query.processCurrentQuery();
+					documents = query.getArticles();
+		
+					int i=0;
+					int j=0;
+					int distance=0;
+		
+					withinWindowSize = false;
+		
+					for (Entry<LivingKnowledgeSnapshot,Double> s : documents.entrySet())
+					{
+			
+							positionsTerm.clear();
+							positionsQueryTerms.clear();
+							nDocuments++;
+							String article = s.getKey().getText();
+			
+							String currentTerm = null;
+							int position = 0;
+			
+							article = query.getPreprocess().removeNonLettersFromText(article);
+			
+							if (article.contains(term.getTermString()))
+							{
+								df++;
+				
+								StringTokenizer tokenArticle = new StringTokenizer (article);
+				
+								while (tokenArticle.hasMoreTokens())
+								{
+					
+									currentTerm = tokenArticle.nextToken();
+									currentTerm = currentTerm.toLowerCase();
+					
+									if (currentTerm.contentEquals(term.getTermString().toLowerCase()))
+									{
+										tf++;
+										positionsTerm.add(position);
+						
+									}
+					
+									if (queryTerms.contains(currentTerm.toLowerCase()))
+									{
+										positionsQueryTerms.add(position);
+									}
+					
+									position++;
+								}
+				
+								pairCoOccurr = calculatePairCoOcurr (positionsQueryTerms,positionsTerm);
+								while (i<positionsQueryTerms.size() && j<positionsTerm.size())
+								{
+									if (positionsQueryTerms.get(i) <= positionsTerm.get(j))
+									{
+						
+										distance = Math.abs(positionsQueryTerms.get(i) - positionsTerm.get(j));
+										if (distance <= windowSize)
+											coOcurr++;
+										i++;
+						
+									}
+									else
+									{
+										distance = Math.abs(positionsQueryTerms.get(i) - positionsTerm.get(j));
+										if (distance <= windowSize)
+											coOcurr++;
+						
+										j++;
+									}
+						
+									if (distance <= generalWindowSize)	
+										withinWindowSize = true;
+								}
+				
+								break;
+							}
+					}
+		
+					if (withinWindowSize)		
+						termProx++;
+				}
+			}
+			
+			term.setTf(tf,1);
+			term.setLogTf(2);
+			term.setDf(df,3);
+			term.setLogDf(4);
+			if (df==0)
+				term.setIdf(0,5);
+			else
+				term.setIdf((double)Math.log(nDocuments/df),5);
+				
+			term.setLogIdf(6);
+			term.setCoOcurrencyQuery(coOcurr,7);
+			
+			if (coOcurr==0)
+				term.setLogCoOcurrencyQuery(0,8);
+			else
+				term.setLogCoOcurrencyQuery(Math.log(coOcurr)/queryTerms.size(),8);
+			
+			term.setPairCoOccurQuery(pairCoOccurr,9);
+			
+			if (pairCoOccurr==0)
+				term.setLogPairCoCoccurQuery(0,10);
+			else
+				term.setLogPairCoCoccurQuery((double)Math.log(pairCoOccurr)/pairCount,10);
+			term.setTermProximity(termProx,11);
+			term.setTD(0.7,14);
+			term.setTfIdf(17);
+			term.setLogTfIdf(18);
+			term.setLogTfDf(19);
+			
+			br.close();
+	}
+	
+	public void calculateFeaturesOnline (Map<LivingKnowledgeSnapshot, Double> documents) throws Exception
+	{
+		
+		int i=0;
+		int j=0;
+		int distance=0;
+		windowSize = 15;
+		nDocuments=0;
+		tf=0;
+		pairCoOccurr =0;
+		coOcurr =0;
+		df=0;
+		termProx = 0;
+		withinWindowSize = false;
+		ftf = 0;
+		
+		for (Entry<LivingKnowledgeSnapshot,Double> s : documents.entrySet())
+		{
+			
+			positionsTerm.clear();
+			positionsQueryTerms.clear();
+			nDocuments++;
+			String article = s.getKey().getText();
+			
+			String currentTerm = null;
+			int position = 0;
+			
+			article = queryObject.getPreprocess().removeNonLettersFromText(article);
+			
+			if (article.contains(term.getTermString()))
+			{
+				df++;
+				
+				StringTokenizer tokenArticle = new StringTokenizer (article);
+				
+				while (tokenArticle.hasMoreTokens())
+				{
+					
+					currentTerm = tokenArticle.nextToken();
+					currentTerm = currentTerm.toLowerCase();
+					
+					if (currentTerm.contentEquals(term.getTermString().toLowerCase()))
+					{
+						tf++;
+						positionsTerm.add(position);
+						
+					}
+					
+					if (queryTerms.contains(currentTerm.toLowerCase()))
+					{
+						positionsQueryTerms.add(position);
+					}
+					
+					position++;
+				}
+				
+				pairCoOccurr = calculatePairCoOcurr (positionsQueryTerms,positionsTerm);
+				while (i<positionsQueryTerms.size() && j<positionsTerm.size())
+				{
+					if (positionsQueryTerms.get(i) <= positionsTerm.get(j))
+					{
+						
+						distance = Math.abs(positionsQueryTerms.get(i) - positionsTerm.get(j));
+						if (distance <= windowSize)
+							coOcurr++;
+						i++;
+						
+					}
+					else
+					{
+						distance = Math.abs(positionsQueryTerms.get(i) - positionsTerm.get(j));
+						if (distance <= windowSize)
+							coOcurr++;
+						
+						j++;
+					}
+						
+					if (distance <= generalWindowSize)	
+						withinWindowSize = true;
+				}
+				
+				break;
+			}
+		}
+		
+		if (withinWindowSize)		
+			termProx++;
+		
+	}
 }

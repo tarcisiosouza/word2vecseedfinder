@@ -9,6 +9,9 @@ import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import de.l3s.souza.learningtorank.Term;
+import de.l3s.souza.learningtorank.TermUtils;
+
 public class RunApplication {
 
 	private static String propFileName = "seedfinderparam.properties";
@@ -26,12 +29,14 @@ public class RunApplication {
 	private static double scoreParam;
 	private static String runname;
 	private static int maxUsedFreqTerm;
+	private static String features;
+	private static double lambda;
+	private static int windowsize;
 	private static deepLearningUtils deepLearning;
 	
 	public static void main (String args[]) throws Exception
 	{
 		
-	
 		InputStream inputStream = RunApplication.class.getClassLoader().getResourceAsStream(propFileName);
 		config = new Properties ();
 		
@@ -41,6 +46,9 @@ public class RunApplication {
 			throw new FileNotFoundException("property file '" + propFileName + "' not found in the classpath");
 		}
 		
+		features = config.getProperty("features");
+		lambda = Double.parseDouble(config.getProperty("lambda"));
+		windowsize=Integer.parseInt(config.getProperty("windowsize"));
 		limit = Integer.parseInt(config.getProperty("limit"));
 		maxUsedFreqTerm = Integer.parseInt(config.getProperty("maxUsedFreqTerm"));
 		maxSimTerms = Integer.parseInt(config.getProperty("maxSimTerms"));
@@ -128,7 +136,11 @@ public class RunApplication {
 					continue;*/
 			/*	if (topic.contentEquals("001p"))
 				{*/
-					Query query = new Query (maxUsedFreqTerm,topic,runname,title,title+" "+description+" "+initialQuery,title+" "+description,limit,field,terms,maxSimTerms,query_time,maxDoc,
+				//public TermUtils (String topic, String path, Term term, int windowSize,double lambda, String features)
+				Term term = new Term ("");
+				TermUtils termUtils = new TermUtils (topic,"/home/souza/NTCIR-eval/ntcir11_Temporalia_taskdata/TaskData/TIR/",term,windowsize,lambda,features);
+
+					Query query = new Query (termUtils,maxUsedFreqTerm,topic,runname,title,title+" "+description+" "+initialQuery,title+" "+description,limit,field,terms,maxSimTerms,query_time,maxDoc,
 						maxIter,alpha,beta,gama,scoreParam);
 			/*	break;	
 				}*/

@@ -33,6 +33,7 @@ import de.l3s.souza.evaluation.DocumentParser;
 import de.l3s.souza.evaluation.DocumentSimilarity;
 import de.l3s.souza.evaluation.LivingKnowledgeEvaluation;
 import de.l3s.souza.evaluation.PairDocumentSimilarity;
+import de.l3s.souza.learningtorank.Term;
 import de.l3s.souza.preprocess.PreProcess;
 import de.unihd.dbs.heideltime.standalone.HeidelTimeStandalone;
 
@@ -898,6 +899,15 @@ public class QueryExpansion {
                 collectionSpecification.add(filteredDocument);
             }
         }
+    }
+    
+    public void reScoreTermsL2R ()
+    {
+    	for (Entry<String, Double> s : urlTerms.entrySet())
+		{
+    		Term term = new Term (s.getKey());
+    		
+		}
     }
 	
 }

@@ -34,6 +34,7 @@ import de.l3s.elasticquery.LivingKnowledgeSnapshot;
 import de.l3s.souza.evaluation.LivingKnowledgeEvaluation;
 import de.l3s.souza.evaluation.PairDocumentSimilarity;
 import de.l3s.souza.evaluation.ScoreFunctions;
+import de.l3s.souza.learningtorank.TermUtils;
 import de.l3s.souza.output.HtmlOutput;
 import de.l3s.souza.preprocess.PreProcess;
 import de.unihd.dbs.heideltime.standalone.DocumentType;
@@ -185,7 +186,7 @@ public class Query
 		return queryExpansion.getCandidateTerms(deepLearning);
 	}
 	//
-	public Query(int maxUsedFreqTerm,String topicID,String runname, String title, String initialQuery,String titlePlusDescription, int limit,String field,int terms, int maxSimTerms,
+	public Query(TermUtils termUtils,int maxUsedFreqTerm,String topicID,String runname, String title, String initialQuery,String titlePlusDescription, int limit,String field,int terms, int maxSimTerms,
 			String eventDate, int maxDoc, int maxIter, double alpha,double beta,double gama,double scoreParam) throws Exception {
 		
 		super();
@@ -268,7 +269,6 @@ public class Query
 		processQuery(initialQuery,field,"0");
 		usedQueries.add(initialQuery);
 		handleDuplicates(articles,"0");
-		
 		
 		deepLearning.loadModel("/home/souza/ntcir11_models/"+topicID+".txt");
 		
