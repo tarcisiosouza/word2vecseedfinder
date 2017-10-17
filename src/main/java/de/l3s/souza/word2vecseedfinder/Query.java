@@ -163,7 +163,7 @@ public class Query
 	
 	public void setTopic(String topic) {
 		this.topic = topic;
-		deepLearning.loadModel("/home/souza/ntcir11_models/"+topic+".txt");
+		//deepLearning.loadModel("/home/souza/ntcir11_models/"+topic+".txt");
 	}
 
 	public void processCurrentQuery () throws Exception
@@ -191,7 +191,8 @@ public class Query
 		
 		super();
 		preprocess = new PreProcess();
-		
+		elasticUtil = new ElasticMain ("",limit,field,"souza_livingknowledge");
+		this.field=field;
 		deepLearning = new deepLearningUtils ("articles.txt");
 		//deepLearning.loadModel("/home/souza/Word2VecTrainSources/complete_corpus.txt");
 		this.beta = beta;
@@ -284,7 +285,7 @@ public class Query
 		articles =  urlScoreObject.urlScoreFunction(heidelTime,deepLearning,topicID, eventDate,articles,"0",urls,initialQuery);
 		articles = (HashMap<LivingKnowledgeSnapshot, Double>) sortByComparator(articles,false);
 		
-		queryExpansion = new QueryExpansion(maxUsedFreqTerm,topicID,initialQuery,titlePlusDescription ,articlesWithoutDuplicates, articles, 
+		queryExpansion = new QueryExpansion(termUtils,maxUsedFreqTerm,topicID,initialQuery,titlePlusDescription ,articlesWithoutDuplicates, articles, 
 				maxSimTerms, terms,eventDate, alpha, beta);
 
 		LivingKnowledgeEvaluation evaluator = queryExpansion.getLivingKnowledgeEvaluator();

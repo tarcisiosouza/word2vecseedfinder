@@ -34,6 +34,7 @@ import de.l3s.souza.evaluation.DocumentSimilarity;
 import de.l3s.souza.evaluation.LivingKnowledgeEvaluation;
 import de.l3s.souza.evaluation.PairDocumentSimilarity;
 import de.l3s.souza.learningtorank.Term;
+import de.l3s.souza.learningtorank.TermUtils;
 import de.l3s.souza.preprocess.PreProcess;
 import de.unihd.dbs.heideltime.standalone.HeidelTimeStandalone;
 
@@ -44,6 +45,7 @@ public class QueryExpansion {
 	private HashMap<String, Double> candidateQueries;
 	private HashSet<String> usedQueries;
 	private String aQuery;
+	private StringBuilder featuresVectors = new StringBuilder ();
 	private HashMap<String,String> unlabeledDocs;
 	private String eventDate;
 	private int maxFreqUsedTerm;
@@ -69,7 +71,7 @@ public class QueryExpansion {
 	HashMap<LivingKnowledgeSnapshot, Double> articles;
 	private String currentQuery;
 	private HashSet<String> nextQuery;
-	
+	private TermUtils termUtils;
 	public HashSet<String> getCollectionSpecification() {
 		return collectionSpecification;
 	}
@@ -102,13 +104,14 @@ public class QueryExpansion {
 		LivingKnowledgeEvaluator.classifyDocuments(articles);
 		relevantDocuments = new HashSet<String>();
 	}
-	public QueryExpansion(int maxUsedFreqTerm, String topicID,String cQuery,String aQuery, HashMap<String,Article> articlesWitDup,HashMap<LivingKnowledgeSnapshot,Double> art,
+	public QueryExpansion(TermUtils termUtils,int maxUsedFreqTerm, String topicID,String cQuery,String aQuery, HashMap<String,Article> articlesWitDup,HashMap<LivingKnowledgeSnapshot,Double> art,
 			int totalSimilar,int expandedTerms, String eventDate, double alpha,double beta) throws Exception {
 		
 		candidateQueries = new HashMap<String,Double>();
 		usedQueries = new HashSet<String>();
 		queryCandidatesScores = new HashMap<String,Double>();
 
+		this.termUtils = termUtils;
 		this.aQuery = aQuery;
 		maxFreqUsedTerm = maxUsedFreqTerm;
 		this.eventDate = eventDate;
@@ -442,15 +445,20 @@ public class QueryExpansion {
 	{
 		int pseudoRelevantDoc = 0;
 		nextQuery.clear();
-		
+		featuresVectors = new StringBuilder ();
+		String currentQuery = "";
 		StringTokenizer tokenaQuery = new StringTokenizer (aQuery);
 		while (tokenaQuery.hasMoreTokens())
 		{
 			String current = tokenaQuery.nextToken();
 			nextQuery.add(current);
-			
+			if (tokenaQuery.hasMoreTokens())
+				currentQuery = currentQuery + current + " ";
+			else
+				currentQuery = currentQuery + current;
 		}
 		
+		termUtils.setQuery(currentQuery);
 		urlTerms.clear();
 		HashMap<String,Double> classifiedDocuments = new HashMap<String,Double>();
 
@@ -495,11 +503,11 @@ public class QueryExpansion {
 						
 						while (iteratorNearest.hasNext())
 						{
-						
+							
 							String currentNearest = iteratorNearest.next();
 							double cos = deepLearning.getCosSimilarity(currentNearest, term);
 							urlTerms.put(currentNearest,cos);
-							
+							updateFeaturesVectors (currentNearest);
 						/*	if (termsCandidateQuery<expandTerms)
 							{
 								currentCandidateQuery += " " + currentNearest;
@@ -535,7 +543,7 @@ public class QueryExpansion {
 						String currentNearest = iteratorNearest.next();
 						double cos = deepLearning.getCosSimilarity(currentNearest, currentTokenTerm);
 						urlTerms.put(currentNearest,cos);
-						
+						updateFeaturesVectors (currentNearest);
 					/*	if (termsCandidateQuery<expandTerms)
 						{
 							currentCandidateQuery += " " + currentNearest;
@@ -563,15 +571,16 @@ public class QueryExpansion {
 					continue;
 			
 				if (!nearest.isEmpty())
+				{
 					urlTerms.put(term, relevance);
-					
+					updateFeaturesVectors (term);
+				}	
 			}	
 			/*if (termsCandidateQuery>0)
 				candidateQueries.put(currentCandidateQuery, currentScoreCandidateQuery/termsCandidateQuery);
 			*/
 			
 		}
-		
 		
 		urlTerms = normalizeScores (urlTerms);
 		
@@ -908,6 +917,30 @@ public class QueryExpansion {
     		Term term = new Term (s.getKey());
     		
 		}
+    }
+    
+    public void updateFeaturesVectors (String currentTerm) throws Exception
+    {
+    	Term termL2r = new Term (currentTerm);
+		termUtils.setTerm(termL2r);
+		termUtils.calculateFeaturesCollectionOnline();
+		termUtils.calculateFeaturesOnline(articles,preprocess);
+		
+		HashMap<Integer,Double> features = new HashMap<Integer,Double>();
+		features = termL2r.getFeaturesVector();
+		featuresVectors.append("0 "+"qid:"+topicID+" ");
+		int indice = 0;
+		
+		for (Entry<Integer,Double> feature : features.entrySet())
+		{
+			if (indice<=features.size())
+				featuresVectors.append(feature.getKey()+":"+feature.getValue() + " ");
+			else
+				featuresVectors.append(feature.getKey()+":"+feature.getValue());
+			indice++;
+		}
+			
+		featuresVectors.append(" #"+termL2r.getTermString()+"\n");
     }
 	
 }

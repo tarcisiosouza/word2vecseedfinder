@@ -40,11 +40,13 @@ public class TermUtils {
 	private int termProx = 0;
 	private boolean withinWindowSize = false;
 	private int ftf = 0;
+	private Query queryUtil;
 	private ArrayList<Integer> positionsTerm = new ArrayList<Integer>();
 	private ArrayList<Integer> positionsQueryTerms = new ArrayList<Integer>();
 	private HashMap<LivingKnowledgeSnapshot,Double> feedbackDocuments = new HashMap<LivingKnowledgeSnapshot,Double> ();
-	public TermUtils (String topic, String path, Term term, int windowSize,double lambda, String features)
+	public TermUtils (String topic, String path, Term term, int windowSize,double lambda, String features) throws Exception
 	{
+		queryUtil = new Query (1,"id");
 		this.term = term;
 		this.features = features;
 		this.topic = topic;
@@ -351,7 +353,7 @@ public class TermUtils {
 						withinWindowSize = true;
 				}
 				
-			//	break;
+				break;
 			}
 		}
 		
@@ -364,7 +366,7 @@ public class TermUtils {
 	{
 		
 			Map<LivingKnowledgeSnapshot, Double> documents = new HashMap<LivingKnowledgeSnapshot, Double>();
-		
+			
 			String filePath = path + topic + "/" + topic + ".rel";
 			df = 0;
 			nDocuments = 0;
@@ -389,12 +391,13 @@ public class TermUtils {
 							
 					id = token.nextToken();
 					rel = token.nextToken();
-					Query query = new Query (1,"id");
-					query.setCurrentQueryID(id);
-					query.setLimit(1);
-					query.setField("id");
-					query.processCurrentQuery();
-					documents = query.getArticles();
+					
+					queryUtil.setCurrentQueryID(id);
+					queryUtil.setLimit(1);
+					queryUtil.setTopic(topic);
+					queryUtil.setField("id");
+					queryUtil.processCurrentQuery();
+					documents = queryUtil.getArticles();
 		
 					int i=0;
 					int j=0;
@@ -413,7 +416,7 @@ public class TermUtils {
 							String currentTerm = null;
 							int position = 0;
 			
-							article = query.getPreprocess().removeNonLettersFromText(article);
+							article = queryUtil.getPreprocess().removeNonLettersFromText(article);
 			
 							if (article.contains(term.getTermString()))
 							{
@@ -508,7 +511,7 @@ public class TermUtils {
 			br.close();
 	}
 	
-	public void calculateFeaturesOnline (Map<LivingKnowledgeSnapshot, Double> documents) throws Exception
+	public void calculateFeaturesOnline (Map<LivingKnowledgeSnapshot, Double> documents, PreProcess preprocess) throws Exception
 	{
 		
 		int i=0;
@@ -535,7 +538,7 @@ public class TermUtils {
 			String currentTerm = null;
 			int position = 0;
 			
-			article = queryObject.getPreprocess().removeNonLettersFromText(article);
+			article = preprocess.removeNonLettersFromText(article);
 			
 			if (article.contains(term.getTermString()))
 			{
