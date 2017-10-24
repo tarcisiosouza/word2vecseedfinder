@@ -704,7 +704,8 @@ public int getLimit() {
 		int position = 0;
 		while (iterator.hasNext()) 
 		{
-		    
+		    if (position>terms)
+		    	break;
 			if (position==size)
 			{
 				currentQuery = currentQuery + iterator.next().toString();

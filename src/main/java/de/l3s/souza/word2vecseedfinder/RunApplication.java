@@ -145,7 +145,7 @@ public class RunApplication {
 				{*/
 				//public TermUtils (String topic, String path, Term term, int windowSize,double lambda, String features)
 				termUtils.setTopic(topic);
-				query.run(termUtils, topic, title, title, title+description, query_time);
+				query.run(termUtils, topic, title, title, title, query_time);
 			/*	break;	
 				}*/
 					
