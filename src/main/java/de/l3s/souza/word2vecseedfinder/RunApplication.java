@@ -34,6 +34,8 @@ public class RunApplication {
 	private static int windowsize;
 	private static deepLearningUtils deepLearning;
 	private static int candidateTerms;
+	private static boolean L2r;
+	
 	public static void main (String args[]) throws Exception
 	{
 		
@@ -46,6 +48,7 @@ public class RunApplication {
 			throw new FileNotFoundException("property file '" + propFileName + "' not found in the classpath");
 		}
 		
+		L2r = Boolean.getBoolean(config.getProperty("L2r"));
 		candidateTerms = Integer.parseInt(config.getProperty("candidateTerms"));
 		features = config.getProperty("features");
 		lambda = Double.parseDouble(config.getProperty("lambda"));
@@ -78,7 +81,7 @@ public class RunApplication {
 		String atempQuery="";
 		
 		Query query = new Query (maxUsedFreqTerm,runname,limit,field,terms,maxSimTerms,candidateTerms,maxDoc,
-				maxIter,alpha,beta,gama,scoreParam);
+				maxIter,alpha,beta,gama,scoreParam,L2r);
 		while ((line=br.readLine())!=null)
 		{
 			if (line.contains("<id>"))

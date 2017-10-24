@@ -79,6 +79,7 @@ public class Query
 	private static HashSet<String> domains;
 	private HashSet<String> similarTermsLinks;
 	private double beta;
+	private boolean L2r;
 	private HashMap<LivingKnowledgeSnapshot, Double> finalDocSet;
 	private HashSet<String> entitiesInLinks;
 	private HashMap<String,Double> entitiesCandidates;
@@ -194,7 +195,7 @@ public class Query
 	}
 	//
 	public Query(int maxUsedFreqTerm,String runname, int limit,String field,int terms, int maxSimTerms,
-			int candidateTerms, int maxDoc, int maxIter, double alpha,double beta,double gama,double scoreParam) throws Exception {
+			int candidateTerms, int maxDoc, int maxIter, double alpha,double beta,double gama,double scoreParam,boolean L2r) throws Exception {
 		
 		super();
 		preprocess = new PreProcess();
@@ -217,6 +218,7 @@ public class Query
 		this.beta=beta;
 		this.gama=gama;
 		this.scoreParam=scoreParam;
+		this.L2r=L2r;
 	}
 	
 	public void run (TermUtils termUtils,String topicID, String title, String initialQuery,String titlePlusDescription,
@@ -300,7 +302,7 @@ public class Query
 		articles = (HashMap<LivingKnowledgeSnapshot, Double>) sortByComparator(articles,false);
 		
 		queryExpansion = new QueryExpansion(preprocess,termUtils,maxUsedFreqTerm,topicID,initialQuery,titlePlusDescription ,articlesWithoutDuplicates, articles, 
-				maxSimTerms, candidateTerms,terms,eventDate, alpha, beta);
+				maxSimTerms, candidateTerms,terms,eventDate, alpha, beta,L2r);
 
 		LivingKnowledgeEvaluation evaluator = queryExpansion.getLivingKnowledgeEvaluator();
 		

@@ -68,6 +68,7 @@ public class QueryExpansion {
 	private HashMap<String,Article> articlesWithoutDup;
 	private LivingKnowledgeEvaluation LivingKnowledgeEvaluator;
 	private double beta;
+	private boolean L2r;
 	private int candidateTerms;
 	private String topicID;
 	private double alpha;
@@ -129,7 +130,7 @@ public class QueryExpansion {
 		this.termUtils = termUtils;
 		collection = new HashMap<String,String>();
 		setCollection();
-		
+		this.L2r=L2r;
 		l2rEvaluator = new Evaluator (RANKER_TYPE.LAMBDAMART,METRIC.MAP,METRIC.MAP);
 		l2rEvaluator.normalize = true;
 		l2rEvaluator.nml = new ZScoreNormalizor();
@@ -637,14 +638,16 @@ public class QueryExpansion {
 			*/
 			
 		}
-		
+	if (L2r)
+	{
 		updateFeaturesVectors ();
 		String ranked = l2rEvaluator.rankToString("/home/souza/mymodels/f3.cas", featuresVectors.toString());
 		reScoreTermsL2R (ranked);
-		
+	}	
 		//System.out.println(ranked);
 		
-//			urlTerms = normalizeScores (urlTerms);
+	if (!L2r)
+        urlTerms = normalizeScores (urlTerms);
 		
 		System.out.println ("articles: "+articles.size()+ " relevant so far "+ relevantDocuments.size());
 		
