@@ -77,6 +77,8 @@ public class RunApplication {
 		String topic;
 		String atempQuery="";
 		
+		Query query = new Query (maxUsedFreqTerm,runname,limit,field,terms,maxSimTerms,candidateTerms,maxDoc,
+				maxIter,alpha,beta,gama,scoreParam);
 		while ((line=br.readLine())!=null)
 		{
 			if (line.contains("<id>"))
@@ -140,12 +142,10 @@ public class RunApplication {
 				{*/
 				//public TermUtils (String topic, String path, Term term, int windowSize,double lambda, String features)
 				termUtils.setTopic(topic);
-					Query query = new Query (termUtils,maxUsedFreqTerm,topic,runname,title,title,title,limit,field,terms,maxSimTerms,candidateTerms,query_time,maxDoc,
-						maxIter,alpha,beta,gama,scoreParam);
+				query.run(termUtils, topic, title, title, title+description, query_time);
 			/*	break;	
 				}*/
 					
-					query.getAvPrecision();
 			}
 			
 			

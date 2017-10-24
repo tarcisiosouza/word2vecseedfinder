@@ -119,7 +119,7 @@ public class QueryExpansion {
 		LivingKnowledgeEvaluator.classifyDocuments(articles);
 		relevantDocuments = new HashSet<String>();
 	}
-	public QueryExpansion(TermUtils termUtils,int maxUsedFreqTerm, String topicID,String cQuery,String aQuery, HashMap<String,Article> articlesWitDup,HashMap<LivingKnowledgeSnapshot,Double> art,
+	public QueryExpansion(PreProcess preprocess,TermUtils termUtils,int maxUsedFreqTerm, String topicID,String cQuery,String aQuery, HashMap<String,Article> articlesWitDup,HashMap<LivingKnowledgeSnapshot,Double> art,
 			int totalSimilar,int candidateTerms,int expandedTerms, String eventDate, double alpha,double beta) throws Exception {
 		
 		candidateQueries = new HashMap<String,Double>();
@@ -140,7 +140,7 @@ public class QueryExpansion {
 		LivingKnowledgeEvaluator = new LivingKnowledgeEvaluation (topicID);
 		relevantDocuments = new HashSet<String>();
 		unlabeledDocs = new HashMap<String,String>();
-		preprocess = new PreProcess ();
+		this.preprocess = preprocess;
 		currentQuery = cQuery;
 		nextQuery = new HashSet<String>();
 		queryCandidatesScores = new HashMap<String,Double>();

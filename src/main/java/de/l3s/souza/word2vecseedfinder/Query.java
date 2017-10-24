@@ -54,8 +54,14 @@ public class Query
 	private HashSet<String> usedQueries = new HashSet<String>();
 	private int terms;
 	private ElasticMain elasticUtil;
+	private double alpha;
+	private double gama;
+	private double scoreParam;
 	private BufferedWriter bw;
 	private int maxSimTerms;
+	private int maxIter;
+	private int candidateTerms;
+	private String runname;
 	private static HeidelTimeStandalone heidelTime;
 	private int maxDoc;
 	private static HashMap <String,String> urls = new HashMap<String,String>();
@@ -67,6 +73,7 @@ public class Query
 	private HashMap<LivingKnowledgeSnapshot, Double> articles;
 	private HashMap<String,Integer> queryTerms;
 	private deepLearningUtils deepLearning;
+	private int maxUsedFreqTerm;
 	private QueryExpansion queryExpansion;
 	private HashMap<LivingKnowledgeSnapshot, Double> retrievedDocuments;
 	private static HashSet<String> domains;
@@ -186,8 +193,8 @@ public class Query
 		return queryExpansion.getCandidateTerms(deepLearning);
 	}
 	//
-	public Query(TermUtils termUtils,int maxUsedFreqTerm,String topicID,String runname, String title, String initialQuery,String titlePlusDescription, int limit,String field,int terms, int maxSimTerms,
-			int candidateTerms,String eventDate, int maxDoc, int maxIter, double alpha,double beta,double gama,double scoreParam) throws Exception {
+	public Query(int maxUsedFreqTerm,String runname, int limit,String field,int terms, int maxSimTerms,
+			int candidateTerms, int maxDoc, int maxIter, double alpha,double beta,double gama,double scoreParam) throws Exception {
 		
 		super();
 		preprocess = new PreProcess();
@@ -199,10 +206,24 @@ public class Query
 		this.beta = beta;
 		urlScoreObject = new ScoreFunctions (scoreParam);
 		entitiesCandidates = new HashMap<String,Double>();
+		this.terms = terms;
+		this.maxSimTerms = maxSimTerms;
+		this.maxDoc = maxDoc;
+		this.maxUsedFreqTerm=maxUsedFreqTerm;
+		this.runname=runname;
+		this.candidateTerms=candidateTerms;
+		this.maxIter=maxIter;
+		this.alpha=alpha;
+		this.beta=beta;
+		this.gama=gama;
+		this.scoreParam=scoreParam;
+	}
 	
-/*		BufferedWriter res = new BufferedWriter(new FileWriter("/home/souza/NTCIR-eval/ntcir12_Temporalia_taskdata/Evaluation Data/"+topicID+"/"+topicID+"."+runname+".res", true));
+	public void run (TermUtils termUtils,String topicID, String title, String initialQuery,String titlePlusDescription,
+			String eventDate) throws Exception
+	{
+		/*		BufferedWriter res = new BufferedWriter(new FileWriter("/home/souza/NTCIR-eval/ntcir12_Temporalia_taskdata/Evaluation Data/"+topicID+"/"+topicID+"."+runname+".res", true));
 		*/
-
 		BufferedWriter res = new BufferedWriter(new FileWriter("/home/souza/NTCIR-eval/ntcir11_Temporalia_taskdata/TaskData/TIR/"+topicID+"/"+topicID+"."+runname+".res", true));
 		bw = new BufferedWriter(new FileWriter("output.txt", true));
 		BufferedWriter out = new BufferedWriter
@@ -242,16 +263,6 @@ public class Query
 	       vowels.add("o");
 	       vowels.add("u");
 		domains = new HashSet<String>();
-		//readDomains ();
-		/*heidelTime = new HeidelTimeStandalone(Language.ENGLISH,
-                DocumentType.SCIENTIFIC,
-                OutputType.TIMEML,
-                "src/main/resources/config.props",
-                POSTagger.TREETAGGER, true);*/
-		this.terms = terms;
-		this.maxSimTerms = maxSimTerms;
-		this.maxDoc = maxDoc;
-		
 		initialQuery = preprocess.removeStopWords(initialQuery);
 		initialQuery = preprocess.removeDuplicates(initialQuery);
 		title = preprocess.removeStopWords(title);
@@ -288,7 +299,7 @@ public class Query
 		articles =  urlScoreObject.urlScoreFunction(heidelTime,deepLearning,topicID, eventDate,articles,"0",urls,initialQuery);
 		articles = (HashMap<LivingKnowledgeSnapshot, Double>) sortByComparator(articles,false);
 		
-		queryExpansion = new QueryExpansion(termUtils,maxUsedFreqTerm,topicID,initialQuery,titlePlusDescription ,articlesWithoutDuplicates, articles, 
+		queryExpansion = new QueryExpansion(preprocess,termUtils,maxUsedFreqTerm,topicID,initialQuery,titlePlusDescription ,articlesWithoutDuplicates, articles, 
 				maxSimTerms, candidateTerms,terms,eventDate, alpha, beta);
 
 		LivingKnowledgeEvaluation evaluator = queryExpansion.getLivingKnowledgeEvaluator();
@@ -489,6 +500,7 @@ public class Query
 			System.out.println (s.getKey() + " " + s.getValue());
 			
 		}
+		
 	}
 
 public int getLimit() {
