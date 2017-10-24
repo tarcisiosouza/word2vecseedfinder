@@ -121,7 +121,7 @@ public class QueryExpansion {
 		relevantDocuments = new HashSet<String>();
 	}
 	public QueryExpansion(PreProcess preprocess,TermUtils termUtils,int maxUsedFreqTerm, String topicID,String cQuery,String aQuery, HashMap<String,Article> articlesWitDup,HashMap<LivingKnowledgeSnapshot,Double> art,
-			int totalSimilar,int candidateTerms,int expandedTerms, String eventDate, double alpha,double beta) throws Exception {
+			int totalSimilar,int candidateTerms,int expandedTerms, String eventDate, double alpha,double beta,boolean L2r) throws Exception {
 		
 		candidateQueries = new HashMap<String,Double>();
 		usedQueries = new HashSet<String>();
