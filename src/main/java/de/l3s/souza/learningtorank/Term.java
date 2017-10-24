@@ -114,7 +114,7 @@ public class Term {
 
 	public void setPairCoOccurQueryPrf(int pairCoOccurQueryPrf,int index) {
 		
-		updateMinMax(pairCoOccurQueryPrf);
+		//updateMinMax(pairCoOccurQueryPrf);
 		this.pairCoOccurQueryPrf = pairCoOccurQueryPrf;
 		featuresVector.put(index,(double) pairCoOccurQueryPrf);
 	}
@@ -124,7 +124,7 @@ public class Term {
 	}
 
 	public void setCoOcurrencyQueryPrf(int coOcurrencyQueryPrf, int index) {
-		updateMinMax(coOcurrencyQueryPrf);
+		//updateMinMax(coOcurrencyQueryPrf);
 		this.coOcurrencyQueryPrf = coOcurrencyQueryPrf;
 		featuresVector.put(index,(double) coOcurrencyQueryPrf);
 	}
@@ -134,7 +134,7 @@ public class Term {
 	}
 
 	public void setFeedbackTermFreq(int feedbackTermFreq, int index) {
-		updateMinMax(feedbackTermFreq);
+		//updateMinMax(feedbackTermFreq);
 		this.feedbackTermFreq = feedbackTermFreq;
 		featuresVector.put(index,(double) feedbackTermFreq);
 	}
@@ -145,7 +145,7 @@ public class Term {
 			logFeedbackTermFreq = 0;
 		else
 		logFeedbackTermFreq = Math.log(feedbackTermFreq);
-		updateMinMax(logFeedbackTermFreq);
+		//updateMinMax(logFeedbackTermFreq);
 		featuresVector.put(index,(double) logFeedbackTermFreq);
 	}
 	
@@ -161,14 +161,14 @@ public class Term {
 	}
 
 	public void setTermProximity(int termProximity,int index) {
-		updateMinMax(termProximity);
+		//updateMinMax(termProximity);
 		this.termProximity = termProximity;
 		featuresVector.put(index,(double) termProximity);
 		
 	}
 
 	public void setLogCoOcurrencyQuery(double logCoOcurrencyQuery, int index) {
-		updateMinMax(logCoOcurrencyQuery);
+		//updateMinMax(logCoOcurrencyQuery);
 		this.logCoOcurrencyQuery = logCoOcurrencyQuery;
 		featuresVector.put(index,logCoOcurrencyQuery);
 	}
@@ -179,7 +179,7 @@ public class Term {
 	}
 
 	public void setLogPairCoCoccurQuery(double logPairCoCoccurQuery, int index) {
-		updateMinMax(logPairCoCoccurQuery);
+		//updateMinMax(logPairCoCoccurQuery);
 		this.logPairCoCoccurQuery = logPairCoCoccurQuery;
 		featuresVector.put(index,logPairCoCoccurQuery);
 	}
@@ -189,7 +189,7 @@ public class Term {
 	}
 
 	public void setPairCoOccurQuery(int pairCoOccurQuery,int index) {
-		updateMinMax(pairCoOccurQuery);
+		//updateMinMax(pairCoOccurQuery);
 		this.pairCoOccurQuery = pairCoOccurQuery;
 		featuresVector.put(index,(double) pairCoOccurQuery);
 	}
@@ -222,7 +222,7 @@ public class Term {
 			logCoOcurrencyQuery = 0;
 		else
 		logCoOcurrencyQuery = Math.log(coOcurrencyQuery);
-		updateMinMax(logCoOcurrencyQuery);
+		//updateMinMax(logCoOcurrencyQuery);
 	}
 	public double getLogCoOcurrencyQuery ()
 	{
@@ -231,13 +231,13 @@ public class Term {
 	
 	public void setCoOcurrencyQuery(int coOcurrencyQuery, int index) {
 		this.coOcurrencyQuery = coOcurrencyQuery;
-		updateMinMax(coOcurrencyQuery);
+		//updateMinMax(coOcurrencyQuery);
 		featuresVector.put(index,(double) coOcurrencyQuery);
 	}
 
 	public void setTf(int tf, int index) {
 		this.tf = tf;
-		updateMinMax(tf);
+		//updateMinMax(tf);
 		featuresVector.put(index,(double) tf);
 		
 	}
@@ -263,7 +263,7 @@ public class Term {
 		if (df == 0)
 			logDf = 0;
 		else logDf = Math.log(df);
-		updateMinMax(logDf);
+		//updateMinMax(logDf);
 		featuresVector.put(index,logDf);
 		
 		
@@ -276,7 +276,7 @@ public class Term {
 		else
 			logTf = Math.log(tf);
 		
-		updateMinMax(logTf);
+		//updateMinMax(logTf);
 		featuresVector.put(index,logTf);
 		
 	}
@@ -287,7 +287,7 @@ public class Term {
 			logIdf = 0;
 		else
 		logIdf = Math.log(idf);
-		updateMinMax(logIdf);
+		//updateMinMax(logIdf);
 		
 		if (logIdf <0)
 			logIdf = Math.abs(logIdf);
@@ -301,7 +301,7 @@ public class Term {
 
 	public void setDf(int df,int index) {
 		this.df = df;
-		updateMinMax(df);
+		//updateMinMax(df);
 		featuresVector.put(index,(double)df);
 	}
 
@@ -311,14 +311,14 @@ public class Term {
 
 	public void setIdf(double idf,int index) {
 		this.idf = idf;
-		updateMinMax(idf);
+		//updateMinMax(idf);
 		featuresVector.put(index,idf);
 	}
 	
 	public void setTfIdf (int index)
 	{
 		tfIdf = tf*idf;
-		updateMinMax(tfIdf);
+		//updateMinMax(tfIdf);
 		featuresVector.put(index,tfIdf);
 
 	}
@@ -334,7 +334,7 @@ public class Term {
 			logTfIdf = 0;
 		else
 		logTfIdf = Math.log(tfIdf);
-		updateMinMax(logTfIdf);
+		//updateMinMax(logTfIdf);
 		featuresVector.put(index,logTfIdf);
 	}
 	
@@ -349,7 +349,7 @@ public class Term {
 			logTfDf = 0;
 		else
 			logTfDf = Math.log(tf*df);
-		updateMinMax(logTfDf);
+		//updateMinMax(logTfDf);
 		featuresVector.put(index,logTfDf);
 
 	}
@@ -361,7 +361,7 @@ public class Term {
 	public void setTD (double lambda, int index)
 	{
 		termDependenceScore = lambda*(coOcurrencyQuery+(1-lambda)*pairCoOccurQuery);
-		updateMinMax(termDependenceScore);
+		//updateMinMax(termDependenceScore);
 		featuresVector.put(index,termDependenceScore);
 		
 	}

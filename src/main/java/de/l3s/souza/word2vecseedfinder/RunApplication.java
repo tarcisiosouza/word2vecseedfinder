@@ -33,7 +33,7 @@ public class RunApplication {
 	private static double lambda;
 	private static int windowsize;
 	private static deepLearningUtils deepLearning;
-	
+	private static int candidateTerms;
 	public static void main (String args[]) throws Exception
 	{
 		
@@ -46,6 +46,7 @@ public class RunApplication {
 			throw new FileNotFoundException("property file '" + propFileName + "' not found in the classpath");
 		}
 		
+		candidateTerms = Integer.parseInt(config.getProperty("candidateTerms"));
 		features = config.getProperty("features");
 		lambda = Double.parseDouble(config.getProperty("lambda"));
 		windowsize=Integer.parseInt(config.getProperty("windowsize"));
@@ -61,7 +62,8 @@ public class RunApplication {
 		gama = Double.parseDouble(config.getProperty("gama"));
 		scoreParam = Double.parseDouble(config.getProperty("scoreParam"));
 		runname = config.getProperty("runname");
-		
+		Term term = new Term ("");
+		TermUtils termUtils = new TermUtils ("","/home/souza/NTCIR-eval/ntcir11_Temporalia_taskdata/TaskData/TIR/",term,windowsize,lambda,features);
 		//File file = new File ("/home/souza/NTCIR-eval/ntcir12_Temporalia_taskdata/Test Collection/NTCIR12_Temporalia2_FormalRun_TDR_En.txt");
 		File file = new File ("/home/souza/NTCIR-eval/ntcir11_Temporalia_taskdata/TaskData/TIR/NTCIR-11TIRTopicsFormalRun.txt");
 
@@ -137,13 +139,13 @@ public class RunApplication {
 			/*	if (topic.contentEquals("001p"))
 				{*/
 				//public TermUtils (String topic, String path, Term term, int windowSize,double lambda, String features)
-				Term term = new Term ("");
-				TermUtils termUtils = new TermUtils (topic,"/home/souza/NTCIR-eval/ntcir11_Temporalia_taskdata/TaskData/TIR/",term,windowsize,lambda,features);
-
-					Query query = new Query (termUtils,maxUsedFreqTerm,topic,runname,title,title+" "+description+" "+initialQuery,title+" "+description,limit,field,terms,maxSimTerms,query_time,maxDoc,
+				termUtils.setTopic(topic);
+					Query query = new Query (termUtils,maxUsedFreqTerm,topic,runname,title,title,title,limit,field,terms,maxSimTerms,candidateTerms,query_time,maxDoc,
 						maxIter,alpha,beta,gama,scoreParam);
 			/*	break;	
 				}*/
+					
+					query.getAvPrecision();
 			}
 			
 			

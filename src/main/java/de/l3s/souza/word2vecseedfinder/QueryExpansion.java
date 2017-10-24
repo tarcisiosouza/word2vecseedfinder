@@ -23,6 +23,11 @@ import java.util.Map.Entry;
 
 import com.twelvemonkeys.imageio.metadata.exif.TIFF;
 
+import ciir.umass.edu.eval.Evaluator;
+import ciir.umass.edu.features.ZScoreNormalizor;
+import ciir.umass.edu.learning.RANKER_TYPE;
+import ciir.umass.edu.metric.METRIC;
+
 import java.util.StringTokenizer;
 import java.util.Vector;
 
@@ -43,6 +48,8 @@ public class QueryExpansion {
 	private HashMap<String,Double> queryCandidatesScores;
 	
 	private HashMap<String, Double> candidateQueries;
+	private Term termL2r = new Term ("");
+	private Evaluator l2rEvaluator;
 	private HashSet<String> usedQueries;
 	private String aQuery;
 	private StringBuilder featuresVectors = new StringBuilder ();
@@ -61,6 +68,7 @@ public class QueryExpansion {
 	private HashMap<String,Article> articlesWithoutDup;
 	private LivingKnowledgeEvaluation LivingKnowledgeEvaluator;
 	private double beta;
+	private int candidateTerms;
 	private String topicID;
 	private double alpha;
 	private int expandTerms;
@@ -72,6 +80,8 @@ public class QueryExpansion {
 	private String currentQuery;
 	private HashSet<String> nextQuery;
 	private TermUtils termUtils;
+	private HashMap<String,String> collection;
+	
 	public HashSet<String> getCollectionSpecification() {
 		return collectionSpecification;
 	}
@@ -94,6 +104,11 @@ public class QueryExpansion {
 	{
 		return LivingKnowledgeEvaluator.getAvPrecision();
 	}
+	
+	private void setCollection () throws IOException, Exception
+	{
+		collection = termUtils.getCollection();
+	}
 	public QueryExpansion (int maxSimTerms, String topicID, HashMap<LivingKnowledgeSnapshot,Double> articles,PreProcess preprocess) throws IOException
 	{
 		
@@ -105,13 +120,19 @@ public class QueryExpansion {
 		relevantDocuments = new HashSet<String>();
 	}
 	public QueryExpansion(TermUtils termUtils,int maxUsedFreqTerm, String topicID,String cQuery,String aQuery, HashMap<String,Article> articlesWitDup,HashMap<LivingKnowledgeSnapshot,Double> art,
-			int totalSimilar,int expandedTerms, String eventDate, double alpha,double beta) throws Exception {
+			int totalSimilar,int candidateTerms,int expandedTerms, String eventDate, double alpha,double beta) throws Exception {
 		
 		candidateQueries = new HashMap<String,Double>();
 		usedQueries = new HashSet<String>();
 		queryCandidatesScores = new HashMap<String,Double>();
-
+		this.candidateTerms = candidateTerms;
 		this.termUtils = termUtils;
+		collection = new HashMap<String,String>();
+		setCollection();
+		
+		l2rEvaluator = new Evaluator (RANKER_TYPE.LAMBDAMART,METRIC.MAP,METRIC.MAP);
+		l2rEvaluator.normalize = true;
+		l2rEvaluator.nml = new ZScoreNormalizor();
 		this.aQuery = aQuery;
 		maxFreqUsedTerm = maxUsedFreqTerm;
 		this.eventDate = eventDate;
@@ -224,8 +245,8 @@ public class QueryExpansion {
 			classifiedDocuments = LivingKnowledgeEvaluator.classifyDocuments(articles);
 			double relevance = classifiedDocuments.get(s.getKey().getDocId());
 			
-			/*if (pseudoRelv > 20)
-				break;*/
+			if (pseudoRelv > 20)
+				break;
 			if ((relevance>0))
 				//continue;
 			//else
@@ -375,8 +396,8 @@ public class QueryExpansion {
 		/*	else
 				continue;
 			*/
-			if (pseudoRelevantDoc > 50)
-				break;
+			/*if (pseudoRelevantDoc > 50)
+				break;*/
 			StringTokenizer token = new StringTokenizer (s.getKey().getTemp(),",");
 			String currentCandidateQuery = "";
 			double currentScoreCandidateQuery = 0.0F;
@@ -476,22 +497,26 @@ public class QueryExpansion {
 			if (pseudoRelevantDoc > 50)
 				break;
 			StringTokenizer token = new StringTokenizer (s.getKey().getTemp(),",");
-			String currentCandidateQuery = "";
-			double currentScoreCandidateQuery = 0.0F;
-			int termsCandidateQuery = 0;
+			
 			while (token.hasMoreTokens()) {
 				String term = token.nextToken();
 				term = term.toLowerCase();
-			
 				term = term.replaceAll(","," ");
 				StringTokenizer tokenTerm = new StringTokenizer (term);
 				
 				while (tokenTerm.hasMoreTokens())
 				{
 					String currentTokenTerm = tokenTerm.nextToken();
+					
+					currentTokenTerm = preprocess.removeNonLettersString(currentTokenTerm);
+					
 					if (preprocess.isStopWord(currentTokenTerm))
 						continue;
-					Collection<String> nearest = deepLearning.getWordsNearest(currentTokenTerm, 60);
+					
+					if (currentTokenTerm.length()<=2)
+						continue;
+					
+					Collection<String> nearest = deepLearning.getWordsNearest(currentTokenTerm, totalSimilar);
 				
 					if (term.length()<=2)
 						continue;
@@ -505,9 +530,16 @@ public class QueryExpansion {
 						{
 							
 							String currentNearest = iteratorNearest.next();
+							
+							currentNearest = preprocess.removeNonLettersString(currentNearest);
+							if (currentNearest.length()<=2)
+								continue;
 							double cos = deepLearning.getCosSimilarity(currentNearest, term);
-							urlTerms.put(currentNearest,cos);
-							updateFeaturesVectors (currentNearest);
+							if (urlTerms.size() < candidateTerms)
+								urlTerms.put(currentNearest,cos);
+							else
+								break;
+							//updateFeaturesVectors (currentNearest);
 						/*	if (termsCandidateQuery<expandTerms)
 							{
 								currentCandidateQuery += " " + currentNearest;
@@ -516,9 +548,13 @@ public class QueryExpansion {
 							}*/
 						}
 					}
+					
+					if (urlTerms.size() > candidateTerms)
+						break;
 				}
 				
-				
+				if (urlTerms.size() > candidateTerms)
+					break;
 			}	
 			
 			StringTokenizer tokenTitle = new StringTokenizer (s.getKey().getTitle());
@@ -527,7 +563,7 @@ public class QueryExpansion {
 				String currentTokenTerm = tokenTitle.nextToken();
 				if (preprocess.isStopWord(currentTokenTerm))
 					continue;
-				Collection<String> nearest = deepLearning.getWordsNearest(currentTokenTerm, 60);
+				Collection<String> nearest = deepLearning.getWordsNearest(currentTokenTerm, totalSimilar);
 			
 				if (currentTokenTerm.length()<=2)
 					continue;
@@ -541,9 +577,19 @@ public class QueryExpansion {
 					{
 					
 						String currentNearest = iteratorNearest.next();
+						currentNearest = preprocess.removeNonLettersString(currentNearest);
+						
+						if (currentNearest.length()<=2)
+							continue;
+						
 						double cos = deepLearning.getCosSimilarity(currentNearest, currentTokenTerm);
-						urlTerms.put(currentNearest,cos);
-						updateFeaturesVectors (currentNearest);
+						
+						
+						if (urlTerms.size() < candidateTerms)
+							urlTerms.put(currentNearest,cos);
+						else
+							break;
+						//updateFeaturesVectors (currentNearest);
 					/*	if (termsCandidateQuery<expandTerms)
 						{
 							currentCandidateQuery += " " + currentNearest;
@@ -552,6 +598,9 @@ public class QueryExpansion {
 						}*/
 					}
 				}
+				
+				if (urlTerms.size() > candidateTerms)
+					break;
 			}
 			
 			
@@ -564,17 +613,24 @@ public class QueryExpansion {
 			while (tokenUrl.hasMoreTokens()) {
 				String term = tokenUrl.nextToken();
 				term = term.toLowerCase();
-				Collection<String> nearest = deepLearning.getWordsNearest(term, 60);
-				
+				Collection<String> nearest = deepLearning.getWordsNearest(term, totalSimilar);
 				
 				if (term.length()<=2)
 					continue;
 			
 				if (!nearest.isEmpty())
 				{
-					urlTerms.put(term, relevance);
-					updateFeaturesVectors (term);
+					
+					if (urlTerms.size() < candidateTerms)
+						urlTerms.put(term, relevance);
+					else
+						break;
+					
+				//	updateFeaturesVectors (term);
 				}	
+				
+				if (urlTerms.size() > candidateTerms)
+					break;
 			}	
 			/*if (termsCandidateQuery>0)
 				candidateQueries.put(currentCandidateQuery, currentScoreCandidateQuery/termsCandidateQuery);
@@ -582,7 +638,13 @@ public class QueryExpansion {
 			
 		}
 		
-		urlTerms = normalizeScores (urlTerms);
+		updateFeaturesVectors ();
+		String ranked = l2rEvaluator.rankToString("/home/souza/mymodels/f3.cas", featuresVectors.toString());
+		reScoreTermsL2R (ranked);
+		
+		//System.out.println(ranked);
+		
+//			urlTerms = normalizeScores (urlTerms);
 		
 		System.out.println ("articles: "+articles.size()+ " relevant so far "+ relevantDocuments.size());
 		
@@ -603,8 +665,6 @@ public class QueryExpansion {
 				termsUsedFreq.put(s.getKey(), value+1);
 			}
 		}
-		
-		
 			
 	}
 	
@@ -910,20 +970,61 @@ public class QueryExpansion {
         }
     }
     
-    public void reScoreTermsL2R ()
+    public void reScoreTermsL2R (String rankedL2r)
     {
-    	for (Entry<String, Double> s : urlTerms.entrySet())
-		{
-    		Term term = new Term (s.getKey());
-    		
-		}
-    }
+    	urlTerms.clear();
+    	StringTokenizer token = new StringTokenizer (rankedL2r);
+    	String term;
+   		double score;
+    		while (token.hasMoreTokens())
+    		{
+    			try {
+    			term = token.nextToken();
+    			score = Math.abs(Double.parseDouble(token.nextToken()));
+    			urlTerms.put(term, score);
+    			} catch (Exception e)
+    			{
+    				
+    			}
+    		}
+	}
     
     public void updateFeaturesVectors (String currentTerm) throws Exception
     {
     	Term termL2r = new Term (currentTerm);
 		termUtils.setTerm(termL2r);
-		termUtils.calculateFeaturesCollectionOnline();
+		termUtils.calculateFeaturesCollectionOnline(collection);
+		termUtils.calculateFeaturesOnline(articles,preprocess);
+		
+		HashMap<Integer,Double> features = new HashMap<Integer,Double>();
+		features = termL2r.getFeaturesVector();
+		featuresVectors.append("0 "+"qid:"+topicID+" ");
+		int indice = 0;
+		
+		for (Entry<Integer,Double> feature : features.entrySet())
+		{
+			if (indice<=features.size())
+				featuresVectors.append(feature.getKey()+":"+feature.getValue() + " ");
+			else
+				featuresVectors.append(feature.getKey()+":"+feature.getValue());
+			indice++;
+			
+		}
+			
+		featuresVectors.append(" #"+termL2r.getTermString()+"\n");
+    }
+	
+    
+    public void updateFeaturesVectors () throws Exception
+    {
+    	int i = 0;
+    	for (Entry<String, Double> s : urlTerms.entrySet())
+		{
+    	
+    		i++;
+    	termL2r.setTermString(s.getKey());
+		termUtils.setTerm(termL2r);
+		termUtils.calculateFeaturesCollectionOnline(collection);
 		termUtils.calculateFeaturesOnline(articles,preprocess);
 		
 		HashMap<Integer,Double> features = new HashMap<Integer,Double>();
@@ -941,6 +1042,7 @@ public class QueryExpansion {
 		}
 			
 		featuresVectors.append(" #"+termL2r.getTermString()+"\n");
+		
+		}
     }
-	
 }

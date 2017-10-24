@@ -187,10 +187,11 @@ public class Query
 	}
 	//
 	public Query(TermUtils termUtils,int maxUsedFreqTerm,String topicID,String runname, String title, String initialQuery,String titlePlusDescription, int limit,String field,int terms, int maxSimTerms,
-			String eventDate, int maxDoc, int maxIter, double alpha,double beta,double gama,double scoreParam) throws Exception {
+			int candidateTerms,String eventDate, int maxDoc, int maxIter, double alpha,double beta,double gama,double scoreParam) throws Exception {
 		
 		super();
 		preprocess = new PreProcess();
+		this.limit = limit;
 		elasticUtil = new ElasticMain ("",limit,field,"souza_livingknowledge");
 		this.field=field;
 		deepLearning = new deepLearningUtils ("articles.txt");
@@ -252,24 +253,26 @@ public class Query
 		this.maxDoc = maxDoc;
 		
 		initialQuery = preprocess.removeStopWords(initialQuery);
+		initialQuery = preprocess.removeDuplicates(initialQuery);
 		title = preprocess.removeStopWords(title);
 		title = preprocess.removePunctuation(title);
-		initialQuery = preprocess.removePunctuation(initialQuery);
+		title = preprocess.removeDuplicates(title);
 	//	titlePlusDescription = preprocess.removeStopWords(titlePlusDescription);
 		titlePlusDescription = preprocess.removePunctuation(titlePlusDescription);
 		this.currentQuery = initialQuery;
 		queryTerms = new HashMap<String,Integer>();
 		retrievedDocuments = new HashMap<LivingKnowledgeSnapshot, Double>();
 		similarTermsLinks = new HashSet<String>();
-		new ElasticMain (initialQuery,limit,field,"souza_livingknowledge");
+		//new ElasticMain (initialQuery,limit,field,"souza_livingknowledge");
 		articlesWithoutDuplicates = new HashMap<String,Article>();
 		articles = new HashMap<LivingKnowledgeSnapshot,Double>();
 		finalDocSet = new HashMap<LivingKnowledgeSnapshot, Double>();
 		addQueryTerms(initialQuery);
+		
 		System.out.println ("Processing query: "+initialQuery+" "+"iter: 0");
 		processQuery(initialQuery,field,"0");
 		usedQueries.add(initialQuery);
-		handleDuplicates(articles,"0");
+	//	handleDuplicates(articles,"0");
 		
 		deepLearning.loadModel("/home/souza/ntcir11_models/"+topicID+".txt");
 		
@@ -286,12 +289,14 @@ public class Query
 		articles = (HashMap<LivingKnowledgeSnapshot, Double>) sortByComparator(articles,false);
 		
 		queryExpansion = new QueryExpansion(termUtils,maxUsedFreqTerm,topicID,initialQuery,titlePlusDescription ,articlesWithoutDuplicates, articles, 
-				maxSimTerms, terms,eventDate, alpha, beta);
+				maxSimTerms, candidateTerms,terms,eventDate, alpha, beta);
 
 		LivingKnowledgeEvaluation evaluator = queryExpansion.getLivingKnowledgeEvaluator();
 		
-		double precision = evaluator.getPrecisionAtn(articles, maxDoc);
+		evaluator.classifyDocuments(articles);
+		double precision = evaluator.getAvPrecision();
 		
+		System.out.println("precision: "+ precision + " totalRelevantPRF: "+ evaluator.getTotalRelevantPRF());
 		HtmlOutput html = new HtmlOutput ();
 		html.outputArticlesHtml(sb, articles, "0", evaluator,topicID,runname);
 		
@@ -326,13 +331,9 @@ public class Query
 		while (iter <= maxIter)
 		{
 			
-			currentQueryString = addTermsCurrentQuery("",nextQuery);
-	
-			/*currentQueryString = currentQueryString.replaceAll("ue", "ü");
-			currentQueryString = currentQueryString.replaceAll("oe", "ö");
-			currentQueryString = currentQueryString.replaceAll("ae", "ä");*/
-		     //   currentQueryString += " " + initialQuery;
-		        currentQueryString = removeDuplicateQuery (currentQueryString);
+			//maintaing always the initial query as the base query
+			currentQueryString = addTermsCurrentQuery(initialQuery + " ",nextQuery);
+		
 		        currentQueryString = preprocess.removePunctuation(currentQueryString);
 		        currentQueryString = preprocess.removeStopWords(currentQueryString);
 			
@@ -345,9 +346,7 @@ public class Query
 					queryExpansion.extractSimilarTermsText(deepLearning,false);
 					nextQuery = queryExpansion.getNextQuery();
 					currentQueryString = addTermsCurrentQuery(currentQueryString,nextQuery);	
-				/*	currentQueryString = removeDuplicateQuery (currentQueryString);
-			        currentQueryString = preprocess.removePunctuation(currentQueryString);
-			        currentQueryString = preprocess.removeStopWords(currentQueryString);*/
+				
 				}
 				else
 					{
@@ -357,19 +356,17 @@ public class Query
 							queryExpansion.extractSimilarTermsText(deepLearning,false);
 							nextQuery = queryExpansion.getNextQuery();
 							currentQueryString = addTermsCurrentQuery(currentQueryString,nextQuery);
-							/*currentQueryString = removeDuplicateQuery (currentQueryString);
-					        currentQueryString = preprocess.removePunctuation(currentQueryString);
-					        currentQueryString = preprocess.removeStopWords(currentQueryString);*/
+							
 						}
 							else
 						{
 								currentQueryString = currentQueryString + " " + queryExpansion.extractSimilarTermsQuery(deepLearning, currentQueryString);
-								/*currentQueryString = removeDuplicateQuery (currentQueryString);
-						        currentQueryString = preprocess.removePunctuation(currentQueryString);
-						        currentQueryString = preprocess.removeStopWords(currentQueryString); */
+							
 						}
 					}
 			}
+			
+			currentQueryString = preprocess.removeDuplicates(currentQueryString);
 			System.out.println ("Processing query: "+currentQueryString+" "+"iter: "+iter);
 			addQueryTerms(currentQueryString);
 			
@@ -384,11 +381,11 @@ public class Query
 			
 			html.outputArticlesHtml(sb, articles, Integer.toString(iter), evaluator,topicID,runname);
 			populateRetrivedDocuments();
+			evaluator.classifyDocuments(articles);
+			sbResults.put(html.getSb(), evaluator.getAvPrecision());
+			sbRes.put(html.getSbRes(), evaluator.getAvPrecision());
 			
-			sbResults.put(html.getSb(), evaluator.getPrecisionAtn(articles, 20));
-			sbRes.put(html.getSbRes(), evaluator.getPrecisionAtn(articles, 20));
-			
-			System.out.println("Precision: "+evaluator.getPrecisionAtn(articles, 20));
+			System.out.println("Precision: "+evaluator.getAvPrecision());
 			queryExpansion.setCurrentQuery(currentQueryString);
 			//queryExpansion.setArticlesWithoutDup(articlesWithoutDuplicates);
 			queryExpansion.setArticles(articles);
@@ -567,10 +564,10 @@ public int getLimit() {
 	{
 			 elasticUtil.setKeywords(query);
 			 elasticUtil.setField(field);
-			
+			 elasticUtil.setLimit(limit);
 			 elasticUtil.run();
 			 HashMap<LivingKnowledgeSnapshot, Double> currentDocs = new HashMap<LivingKnowledgeSnapshot, Double>();
-			 articles = (HashMap<LivingKnowledgeSnapshot, Double>) ElasticMain.getResults();
+			 articles = (HashMap<LivingKnowledgeSnapshot, Double>) elasticUtil.getResults();
 		/*	 
 			 for(Entry<LivingKnowledgeSnapshot, Double> s : currentDocs.entrySet())
 				{

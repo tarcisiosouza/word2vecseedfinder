@@ -27,6 +27,7 @@ public class LivingKnowledgeEvaluation {
 	private String root = "";
 	private static Map<String,String> documents = new HashMap<String,String>();
 	private static int totalRelevant;
+	private int totalRelevantPRF;
 	private double avPrecision;
 	
 	public double getAvPrecision() {
@@ -111,6 +112,7 @@ public class LivingKnowledgeEvaluation {
 		int relevant = 0;
 		double precision;
 		
+		totalRelevantPRF = 0;
 		HashMap<String,Double> classified = new HashMap<String,Double>();
 		//HashMap<String,Double>
 		for (LivingKnowledgeSnapshot article : incomingDocuments.keySet())
@@ -160,7 +162,7 @@ public class LivingKnowledgeEvaluation {
 			}
 			
 		}
-		
+		totalRelevantPRF = relevant;
 		if (relevant==0)
 			 avPrecision = 0.0f;
 		else
@@ -169,6 +171,10 @@ public class LivingKnowledgeEvaluation {
 		return classified;
 	}
 	
+	public int getTotalRelevantPRF() {
+		return totalRelevantPRF;
+	}
+
 	public double getPrecisionAtn (HashMap<LivingKnowledgeSnapshot, Double> docs, int total)
 	{
 		double precision = 0;

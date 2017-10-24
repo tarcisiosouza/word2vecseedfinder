@@ -44,7 +44,9 @@ public class AppTest
     {
     	Evaluator ev = new Evaluator (RANKER_TYPE.LAMBDAMART,METRIC.MAP,METRIC.MAP);
     	
-    	//ev.score("/home/souza/RankLib/models_shuffled/f5.cas", "/home/souza/RankLib/score_testing.txt", "output.txt");
-    	ev.rank("/home/souza/RankLib/models_shuffled/f5.cas", "/home/souza/RankLib/score_testing.txt", "output.txt");
+       	//ev.score("/home/souza/RankLib/models_shuffled/f5.cas", "/home/souza/RankLib/score_testing.txt", "output.txt");
+    	String output = ev.rankToString("/home/souza/mymodels/f3.cas", "0 qid:025f 1:19.0 2:2.944439 3:7.0 4:1.9459101 5:3.218876 6:1.1690322 7:0.0 8:0.0 9:0.0 10:0.0 11:0.0 12:0.0 13:0.0 14:0.0 15:0.0 16:0.0 17:61.15864 18:4.113471 19:4.890349 #sister");
+    	System.out.println(output);
+    	
     }
 }

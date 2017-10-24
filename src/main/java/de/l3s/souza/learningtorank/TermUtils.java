@@ -2,6 +2,7 @@ package de.l3s.souza.learningtorank;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -129,7 +130,7 @@ public class TermUtils {
 		return topic;
 	}
 
-	public static void setTopic(String topic) {
+	public void setTopic(String topic) {
 		TermUtils.topic = topic;
 	}
 
@@ -362,56 +363,68 @@ public class TermUtils {
 		
 	}
 	
-	public void calculateFeaturesCollectionOnline () throws Exception
+	public HashMap<String,String> getCollection () throws IOException, Exception
 	{
 		
-			Map<LivingKnowledgeSnapshot, Double> documents = new HashMap<LivingKnowledgeSnapshot, Double>();
+		Map<LivingKnowledgeSnapshot, Double> document = new HashMap<LivingKnowledgeSnapshot, Double>();
+		
+		HashMap<String,String> collection = new HashMap<String,String>();
+		
+		String filePath = path + topic + "/" + topic + ".rel";
+		
+		File f = new File (filePath);
+		FileReader fr = new FileReader (f);
+		BufferedReader br = new BufferedReader (fr);
+		//term.setTermString(term.getTermString().toLowerCase());
+		
+		String line;
+		
+		while ((line = br.readLine()) != null)
+		{
 			
-			String filePath = path + topic + "/" + topic + ".rel";
+			StringTokenizer token = new StringTokenizer (line);
+			while (token.hasMoreTokens())
+			{
+				String id;		
+				id = token.nextToken();
+				String rel = token.nextToken();
+				queryUtil.setCurrentQueryID(id);
+				queryUtil.setLimit(1);
+				queryUtil.setTopic(topic);
+				queryUtil.setField("id");
+				queryUtil.processCurrentQuery();
+				document = queryUtil.getArticles();
+	
+				for (Entry<LivingKnowledgeSnapshot,Double> s : document.entrySet())
+				{
+					collection.put(s.getKey().getDocId(), s.getKey().getText());
+				}
+			}
+		}
+		
+		
+		return collection;
+		
+	}
+	public void calculateFeaturesCollectionOnline (HashMap<String,String> collec) throws Exception
+	{
+		
 			df = 0;
 			nDocuments = 0;
 			
-			double idf = 0.0f;
-			boolean withinWindowSize;
-			File f = new File (filePath);
-			FileReader fr = new FileReader (f);
-			BufferedReader br = new BufferedReader (fr);
-			//term.setTermString(term.getTermString().toLowerCase());
-			
-			String line;
-			
-			while ((line = br.readLine()) != null)
+			int i=0;
+			int j=0;
+			int distance=0;
+		
+			withinWindowSize = false;
+		
+			for (Entry<String,String> s : collec.entrySet())
 			{
-				
-				StringTokenizer token = new StringTokenizer (line);
-				while (token.hasMoreTokens())
-				{
-					String rel;
-					String id;
-							
-					id = token.nextToken();
-					rel = token.nextToken();
-					
-					queryUtil.setCurrentQueryID(id);
-					queryUtil.setLimit(1);
-					queryUtil.setTopic(topic);
-					queryUtil.setField("id");
-					queryUtil.processCurrentQuery();
-					documents = queryUtil.getArticles();
-		
-					int i=0;
-					int j=0;
-					int distance=0;
-		
-					withinWindowSize = false;
-		
-					for (Entry<LivingKnowledgeSnapshot,Double> s : documents.entrySet())
-					{
 			
 							positionsTerm.clear();
 							positionsQueryTerms.clear();
 							nDocuments++;
-							String article = s.getKey().getText();
+							String article = s.getValue();
 			
 							String currentTerm = null;
 							int position = 0;
@@ -470,14 +483,14 @@ public class TermUtils {
 										withinWindowSize = true;
 								}
 				
-								break;
+								
 							}
-					}
-		
-					if (withinWindowSize)		
-						termProx++;
-				}
+							
+							if (withinWindowSize)		
+								termProx++;
 			}
+		
+					
 			
 			term.setTf(tf,1);
 			term.setLogTf(2);
@@ -507,8 +520,6 @@ public class TermUtils {
 			term.setTfIdf(17);
 			term.setLogTfIdf(18);
 			term.setLogTfDf(19);
-			
-			br.close();
 	}
 	
 	public void calculateFeaturesOnline (Map<LivingKnowledgeSnapshot, Double> documents, PreProcess preprocess) throws Exception

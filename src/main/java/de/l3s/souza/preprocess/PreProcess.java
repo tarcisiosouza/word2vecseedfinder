@@ -39,6 +39,29 @@ public class PreProcess {
   	   	  { e.printStackTrace(); }
 		 
 	 }
+	 
+	 public String removeDuplicates (String incoming)
+	 {
+		 String outcome="";
+		 
+		 StringTokenizer token = new StringTokenizer (incoming);
+		 
+		 while (token.hasMoreTokens())
+		 {
+			 String term = token.nextToken().toLowerCase();
+			 if (!outcome.contains(term))
+			 {
+				 if (outcome.contentEquals(""))
+				 	outcome = outcome + term;
+				 else
+					 outcome = outcome + " " + term;
+			 }
+		 }
+		 
+		 return outcome;
+	 }
+	 
+	 
 	 public String removeStopWords (String str)
 		{
 			String newStr="";
@@ -48,9 +71,13 @@ public class PreProcess {
 			while (token.hasMoreTokens())
 			{
 				String term = token.nextToken().toLowerCase();
+				term = removePunctuation(term);
 				if (!stopwords.contains(term) && term.length()>1)
 				{
-					newStr = newStr + " " +term;
+					if (newStr.contentEquals(""))
+						newStr = newStr + term;
+					else
+						newStr = newStr + " " +term;
 				}
 			}
 			return newStr;
