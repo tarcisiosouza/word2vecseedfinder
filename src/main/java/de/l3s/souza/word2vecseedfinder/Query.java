@@ -388,7 +388,7 @@ public class Query
 							else
 						{
 								currentQueryString = currentQueryString + " " + queryExpansion.extractSimilarTermsQuery(deepLearning, currentQueryString);
-							
+						
 						}
 					}
 			}

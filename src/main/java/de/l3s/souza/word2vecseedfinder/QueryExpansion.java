@@ -495,8 +495,8 @@ public class QueryExpansion {
 		/*	else
 				continue;
 			*/
-			if (pseudoRelevantDoc > 50)
-				break;
+			/*if (pseudoRelevantDoc > 50)
+				break;*/
 			StringTokenizer token = new StringTokenizer (s.getKey().getTemp(),",");
 			
 			while (token.hasMoreTokens()) {
@@ -557,7 +557,7 @@ public class QueryExpansion {
 				if (urlTerms.size() > candidateTerms)
 					break;
 			}	
-			
+		/*	
 			StringTokenizer tokenTitle = new StringTokenizer (s.getKey().getTitle());
 			while (tokenTitle.hasMoreTokens())
 			{
@@ -596,7 +596,7 @@ public class QueryExpansion {
 							currentCandidateQuery += " " + currentNearest;
 							currentScoreCandidateQuery += cos;
 							termsCandidateQuery++;
-						}*/
+						}
 					}
 				}
 				
