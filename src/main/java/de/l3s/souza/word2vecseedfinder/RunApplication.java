@@ -139,13 +139,13 @@ public class RunApplication {
 				
 				System.out.println("Current topic: "+topic);
 				int number = Integer.parseInt(topic.substring(0,3));
-				if (number < 21)
+/*				if (number < 21)
 					continue;
 			/*	if (topic.contentEquals("001p"))
 				{*/
 				//public TermUtils (String topic, String path, Term term, int windowSize,double lambda, String features)
 				termUtils.setTopic(topic);
-				query.run(termUtils, topic, title, title+description, title, query_time);
+				query.run(termUtils, topic, title, title+" "+description, title, query_time);
 			/*	break;	
 				}*/
 					
