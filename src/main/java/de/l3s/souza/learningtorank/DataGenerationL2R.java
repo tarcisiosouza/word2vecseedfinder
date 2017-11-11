@@ -57,7 +57,7 @@ public class DataGenerationL2R {
 			windowsizePRF=Integer.parseInt(config.getProperty("windowsizePRF"));
 			totalFeedbackDocuments=Integer.parseInt(config.getProperty("feedbackDocuments"));
 			candidateTerms = Integer.parseInt(config.getProperty("candidateTerms"));
-			BufferedWriter res = new BufferedWriter(new FileWriter("/home/souza/trainL2R_final.txt", true));
+			BufferedWriter res = new BufferedWriter(new FileWriter("/home/souza/trainL2R_500.txt", true));
 			StringBuilder sb = new StringBuilder ();
 			File file = new File ("/home/souza/NTCIR-eval/ntcir11_Temporalia_taskdata/TaskData/TIR/NTCIR-11TIRTopicsFormalRun.txt");
 			FileReader fr = new FileReader (file);
@@ -66,7 +66,8 @@ public class DataGenerationL2R {
 			int subtopicNumber = 0;
 			
 			Query query = new Query (totalFeedbackDocuments,"text");
-			
+			Term term = new Term("");
+			TermUtils termUtils = new TermUtils ("","/home/souza/NTCIR-eval/ntcir11_Temporalia_taskdata/TaskData/TIR/",term,windowsize,lambda,features);
 			while ((line=br.readLine())!=null)
 			{
 				
@@ -164,8 +165,10 @@ public class DataGenerationL2R {
 							else
 								relevance = 0;
 							
-							Term term = new Term(s.getKey());
-							TermUtils termUtils = new TermUtils (topic,"/home/souza/NTCIR-eval/ntcir11_Temporalia_taskdata/TaskData/TIR/",term,windowsize,lambda,features);
+							term = new Term(s.getKey());
+							termUtils.setTopic(topic);
+							termUtils.setTerm(term);
+							//TermUtils termUtils = new TermUtils (topic,"/home/souza/NTCIR-eval/ntcir11_Temporalia_taskdata/TaskData/TIR/",term,windowsize,lambda,features);
 							term = termUtils.calculateL2Rfeatures(initialQuery,query,totalFeedbackDocuments);
 							HashMap<Integer,Double> features = new HashMap<Integer,Double>();
 							

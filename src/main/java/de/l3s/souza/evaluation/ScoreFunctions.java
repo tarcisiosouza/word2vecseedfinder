@@ -58,28 +58,19 @@ public class ScoreFunctions {
 	    	for (Entry<Article, Double> key:documents.entrySet())
 	    	{
 	    		double termBasedScore = key.getValue();
-	    		//int urlYear = detectValidYearUrl (key);
-	    		//String termsFromdKey = key.replaceAll("[^\\w\\s]", " ").replaceAll("_", " ");
-	    		//String[] text2 = getDate (key);
+	    	
 	    		 yearStr = detectValidYearUrl(key.getKey().getUrl());
 	    		if (yearStr.contentEquals(" "))
 	    		{
 	    			
 	    			timeC = 0;
-	    		/*	StringTokenizer tsToken = new StringTokenizer (finalCaptures.get(key));
-					tsToken.nextToken();
-					ts = Long.parseLong(tsToken.nextToken());
-					String captureDate = parseDate (ts);
-					yearStr = captureDate.substring(0,4);
-					timeC = 0;
-	    			*/
+	    
 	    		}
 	    		
 	    		else
 	    		{
 	    			timeC = Integer.parseInt(yearStr);
-	    			//Date timeUrl = convertToDate (text2[0]);
-	    			//timeC = new Long(timeUrl.getTime()/1000);
+	    			
 	    		}
 	    		
 	    		if (timeC == timeQ)
@@ -129,13 +120,7 @@ public class ScoreFunctions {
 			temporalExp.clear();
 			tempBasedScore = 0.0f;
 			String url = s.getUrl();
-			
-		/*	if (urls.containsKey(url))
-			{
-				String i = urls.get(url);
-				if (!i.contentEquals(iteration))
-					continue;
-			}*/
+		
 			String[]timeExpRegex = dateObject.getDate(url);
 			
 			for (int i=0;i<timeExpRegex.length;i++)
@@ -158,25 +143,6 @@ public class ScoreFunctions {
 			textTempExp = textTempExp.replaceAll("\n", ",");
 			StringTokenizer tokenTextTempExp = new StringTokenizer (textTempExp,",");
 			
-			/*for (String str:timeExpressions)
-			{
-				int year;
-				long distance;
-				
-				Date date = new Date ();
-				date = DateUtils.parseDate(str);
-				Date dateQuery = new Date ();
-				SimpleDateFormat df = new SimpleDateFormat ("MMM dd, yyyy",Locale.ENGLISH); //Mar 29, 2013 GMT+0:00
-				df.setTimeZone(TimeZone.getTimeZone("GMT"));
-				dateQuery = df.parse(queryIssueDate);
-				
-				//System.out.println(getDateDiff(date,dateQuery,TimeUnit.DAYS));
-				
-				tempBasedScore = tempBasedScore + calculateCurrentScore (date,dateQuery,termBasedScore,topic);
-				
-				
-			}*/
-			
 			while (tokenTextTempExp.hasMoreTokens()) {
 				String term = tokenTextTempExp.nextToken();
 				
@@ -197,24 +163,6 @@ public class ScoreFunctions {
 			
 			int matchingTimesQuery = 0;
 			
-		/*	while (token.hasMoreTokens()) {
-				String term = token.nextToken();
-				term = term.toLowerCase();
-			/*	if (initialQuery.toLowerCase().contains(term))
-					matchingTimesQuery++;*/
-				//consider getting the closest time expressions from the current term and calculate the new scores based on the w2vec cos similarity
-				//consider getting the closest words from the time expressions in the documents as expanded terms (for the time-aware query expansion)
-			//	Collection<String> nearest = deepLearning.getWordsNearest(term, 1);
-				
-				//java.util.Iterator<String> iter = nearest.iterator();
-			//	while (iter.hasNext())
-			//	{
-			//		double sim = deepLearning.getCosSimilarity(term, iter.next());
-			//		termBasedScore += sim;
-			//	}
-				
-			//}
-			
 			termBasedScore = s.getScore();
 			relevanceScore = ( alpha * termBasedScore ) + (1-alpha)*tempBasedScore;
 			
@@ -227,16 +175,7 @@ public class ScoreFunctions {
 		return documents;
 		 
 	 }
-	 
-	/* 
-	 public double calculateTempScore (String year, String timeMl)
-	 {
-		 String eventDate = year + "-22-09";
-		 Date date1, date2;
-		 
-		 date1 = 
-		 
-	 }*/
+	
 	  private static String detectValidYearUrl (String url)
 	  {
 	    	String resultUrl = url.replaceAll("[^\\w\\s]", " ").replaceAll("_", " ");

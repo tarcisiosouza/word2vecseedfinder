@@ -470,7 +470,7 @@ public class QueryExpansion {
 		featuresVectors = new StringBuilder ();
 		String currentQuery = "";
 		StringTokenizer tokenaQuery = new StringTokenizer (aQuery);
-		while (tokenaQuery.hasMoreTokens())
+		/*while (tokenaQuery.hasMoreTokens())
 		{
 			String current = tokenaQuery.nextToken();
 			nextQuery.add(current);
@@ -478,9 +478,9 @@ public class QueryExpansion {
 				currentQuery = currentQuery + current + " ";
 			else
 				currentQuery = currentQuery + current;
-		}
+		}*/
 		
-		termUtils.setQuery(currentQuery);
+		//termUtils.setQuery(currentQuery);
 		urlTerms.clear();
 		HashMap<String,Double> classifiedDocuments = new HashMap<String,Double>();
 
@@ -709,13 +709,13 @@ public class QueryExpansion {
 		return relevanceScore;
 
 	}
-	public String extractSimilarTermsQuery (deepLearningUtils deepLearning, String query)
+	public String extractSimilarTermsQuery (deepLearningUtils deepLearning, String query) throws Exception
 	{
 		String currentTerm;
 		String newQuery = "";
 		StringTokenizer token = new StringTokenizer (query);
 		resetQueryExpansionTerms();
-		querySimilarTerms = new HashMap<String,Double> ();
+		urlTerms = new HashMap<String,Double> ();
 		
 		while (token.hasMoreTokens())
 		{
@@ -725,13 +725,13 @@ public class QueryExpansion {
 			  for (Iterator iterator = nearest.iterator(); iterator.hasNext();) 
 			  {
 			        String element = (String) iterator.next();
-			        querySimilarTerms.put(element, 1.0);
+			        urlTerms.put(element, 1.0);
 
 			  }
 			
 		}
 		
-		for (Entry<String, Double> s : querySimilarTerms.entrySet())	
+		for (Entry<String, Double> s : urlTerms.entrySet())	
 		{
 			token = new StringTokenizer (query);
 		
@@ -747,11 +747,21 @@ public class QueryExpansion {
 				}
 			}
 			
-			querySimilarTerms.put(currentTerm,sim);
+			urlTerms.put(currentTerm,sim);
 		}
 		
-		calculateScores(deepLearning);
-		querySimilarTerms = normalizeScores (querySimilarTerms);
+		if (L2r)
+		{
+			updateFeaturesVectors ();
+			String ranked = l2rEvaluator.rankToString("/home/souza/mymodels/f3.cas", featuresVectors.toString());
+			reScoreTermsL2R (ranked);
+		}	
+			//System.out.println(ranked);
+			
+		if (!L2r)
+	        urlTerms = normalizeScores (urlTerms);
+		//calculateScores(deepLearning);
+		//querySimilarTerms = normalizeScores (querySimilarTerms);
 		
 		Map<String, Double> ordered = sortByComparator (querySimilarTerms,DESC);
 		int terms = 0;
@@ -983,7 +993,8 @@ public class QueryExpansion {
     		{
     			try {
     			term = token.nextToken();
-    			score = Math.abs(Double.parseDouble(token.nextToken()));
+    		//	score = Math.abs(Double.parseDouble(token.nextToken()));
+    			score =Double.parseDouble(token.nextToken());
     			urlTerms.put(term, score);
     			} catch (Exception e)
     			{

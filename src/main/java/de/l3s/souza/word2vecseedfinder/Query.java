@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -171,7 +172,7 @@ public class Query
 	
 	public void setTopic(String topic) {
 		this.topic = topic;
-		//deepLearning.loadModel("/home/souza/ntcir11_models/"+topic+".txt");
+		deepLearning.loadModel("/home/souza/ntcir11_models/"+topic+".txt");
 	}
 
 	public void processCurrentQuery () throws Exception
@@ -224,12 +225,23 @@ public class Query
 	public void run (TermUtils termUtils,String topicID, String title, String initialQuery,String titlePlusDescription,
 			String eventDate) throws Exception
 	{
+		boolean result = false;
+		File fileToDelete = new File ("/home/souza/NTCIR-eval/ntcir11_Temporalia_taskdata/TaskData/TIR/"+topicID+"/"+topicID+"."+runname+".res");
+		try {
+			result = Files.deleteIfExists(fileToDelete.toPath());
+		}
+		catch (Exception e){
+		
+			System.out.println (result);
+			}
+		
 		/*		BufferedWriter res = new BufferedWriter(new FileWriter("/home/souza/NTCIR-eval/ntcir12_Temporalia_taskdata/Evaluation Data/"+topicID+"/"+topicID+"."+runname+".res", true));
 		*/
 		BufferedWriter res = new BufferedWriter(new FileWriter("/home/souza/NTCIR-eval/ntcir11_Temporalia_taskdata/TaskData/TIR/"+topicID+"/"+topicID+"."+runname+".res", true));
 		bw = new BufferedWriter(new FileWriter("output.txt", true));
 		BufferedWriter out = new BufferedWriter
     		    (new OutputStreamWriter(new FileOutputStream("word2vecseedfinder.html"),"UTF-8"));
+		
 		
 		  sb.append("<html>");
 		    sb.append("<head>");
@@ -298,8 +310,8 @@ public class Query
 
 		  }*/
 		
-		articles =  urlScoreObject.urlScoreFunction(heidelTime,deepLearning,topicID, eventDate,articles,"0",urls,initialQuery);
-		articles = (HashMap<LivingKnowledgeSnapshot, Double>) sortByComparator(articles,false);
+		//articles =  urlScoreObject.urlScoreFunction(heidelTime,deepLearning,topicID, eventDate,articles,"0",urls,initialQuery);
+		//articles = (HashMap<LivingKnowledgeSnapshot, Double>) sortByComparator(articles,false);
 		
 		queryExpansion = new QueryExpansion(preprocess,termUtils,maxUsedFreqTerm,topicID,initialQuery,titlePlusDescription ,articlesWithoutDuplicates, articles, 
 				maxSimTerms, candidateTerms,terms,eventDate, alpha, beta,L2r);
@@ -338,9 +350,11 @@ public class Query
 		//testBabelFy(articlesWithoutDuplicates);
 		//extractEntitiesFromDocuments();
 		int iter = 1;
-		String currentQueryString;
+		String currentQueryString = null;
 	
 		field = "text";
+		
+		
 		while (iter <= maxIter)
 		{
 			
@@ -349,7 +363,7 @@ public class Query
 		
 		        currentQueryString = preprocess.removePunctuation(currentQueryString);
 		        currentQueryString = preprocess.removeStopWords(currentQueryString);
-			
+		        currentQueryString = preprocess.removeDuplicates(currentQueryString);
 			
 			if (usedQueries.contains(currentQueryString))
 			{
@@ -379,14 +393,14 @@ public class Query
 					}
 			}
 			
-			currentQueryString = preprocess.removeDuplicates(currentQueryString);
+			
 			System.out.println ("Processing query: "+currentQueryString+" "+"iter: "+iter);
 			addQueryTerms(currentQueryString);
 			
-				processQuery(currentQueryString,field,Integer.toString(iter));
+			processQuery(currentQueryString,field,Integer.toString(iter));
 				
 			usedQueries.add(currentQueryString);
-			articles = urlScoreObject.urlScoreFunction(heidelTime,deepLearning,topicID, eventDate,articles,Integer.toString(iter),urls,initialQuery);
+		//	articles = urlScoreObject.urlScoreFunction(heidelTime,deepLearning,topicID, eventDate,articles,Integer.toString(iter),urls,initialQuery);
 		//	if (iter==maxIter)
 				handleDuplicates(articles,Integer.toString(iter));
 			
