@@ -139,7 +139,7 @@ public class RunApplication {
 				
 				System.out.println("Current topic: "+topic);
 				int number = Integer.parseInt(topic.substring(0,3));
-				if (number < 20)
+				if (number < 21)
 					continue;
 			/*	if (topic.contentEquals("001p"))
 				{*/
