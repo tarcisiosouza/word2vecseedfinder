@@ -299,6 +299,9 @@ public class Query
 		usedQueries.add(initialQuery);
 	//	handleDuplicates(articles,"0");
 		
+		queryExpansion = new QueryExpansion(preprocess,termUtils,maxUsedFreqTerm,topicID,initialQuery,titlePlusDescription ,articlesWithoutDuplicates, articles, 
+				maxSimTerms, candidateTerms,terms,eventDate, alpha, beta,L2r);
+
 		LivingKnowledgeEvaluation evaluator = queryExpansion.getLivingKnowledgeEvaluator();
 		
 		evaluator.classifyDocuments(articles);
@@ -323,9 +326,7 @@ public class Query
 		//articles =  urlScoreObject.urlScoreFunction(heidelTime,deepLearning,topicID, eventDate,articles,"0",urls,initialQuery);
 		//articles = (HashMap<LivingKnowledgeSnapshot, Double>) sortByComparator(articles,false);
 		
-		queryExpansion = new QueryExpansion(preprocess,termUtils,maxUsedFreqTerm,topicID,initialQuery,titlePlusDescription ,articlesWithoutDuplicates, articles, 
-				maxSimTerms, candidateTerms,terms,eventDate, alpha, beta,L2r);
-
+		
 		
 		
 		System.out.println("precision: "+ precision + " totalRelevantPRF: "+ evaluator.getTotalRelevantPRF());
