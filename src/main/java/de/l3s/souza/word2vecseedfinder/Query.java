@@ -299,6 +299,16 @@ public class Query
 		usedQueries.add(initialQuery);
 	//	handleDuplicates(articles,"0");
 		
+		LivingKnowledgeEvaluation evaluator = queryExpansion.getLivingKnowledgeEvaluator();
+		
+		evaluator.classifyDocuments(articles);
+		double precision = evaluator.getAvPrecision();
+		if (precision<=0)
+		{
+			processQuery(title,field,"0");
+			usedQueries.add(title);
+		}
+		
 		deepLearning.loadModel("/home/souza/ntcir11_models/"+topicID+".txt");
 		
 	/*	Collection<String> nearest = deepLearning.getWordsNearest("trade",10);
@@ -316,10 +326,7 @@ public class Query
 		queryExpansion = new QueryExpansion(preprocess,termUtils,maxUsedFreqTerm,topicID,initialQuery,titlePlusDescription ,articlesWithoutDuplicates, articles, 
 				maxSimTerms, candidateTerms,terms,eventDate, alpha, beta,L2r);
 
-		LivingKnowledgeEvaluation evaluator = queryExpansion.getLivingKnowledgeEvaluator();
 		
-		evaluator.classifyDocuments(articles);
-		double precision = evaluator.getAvPrecision();
 		
 		System.out.println("precision: "+ precision + " totalRelevantPRF: "+ evaluator.getTotalRelevantPRF());
 		HtmlOutput html = new HtmlOutput ();
