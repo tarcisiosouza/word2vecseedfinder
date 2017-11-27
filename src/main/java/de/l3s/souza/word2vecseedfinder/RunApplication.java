@@ -41,6 +41,8 @@ public class RunApplication {
 		
 		InputStream inputStream = RunApplication.class.getClassLoader().getResourceAsStream(propFileName);
 		config = new Properties ();
+		double totalMap = 0.0f;
+		int total = 0;
 		
 		if (inputStream != null) {
 			config.load(inputStream);
@@ -48,7 +50,7 @@ public class RunApplication {
 			throw new FileNotFoundException("property file '" + propFileName + "' not found in the classpath");
 		}
 		
-		L2r = Boolean.getBoolean(config.getProperty("L2r"));
+		L2r = Boolean.parseBoolean(config.getProperty("L2r"));
 		candidateTerms = Integer.parseInt(config.getProperty("candidateTerms"));
 		features = config.getProperty("features");
 		lambda = Double.parseDouble(config.getProperty("lambda"));
@@ -84,6 +86,7 @@ public class RunApplication {
 				maxIter,alpha,beta,gama,scoreParam,L2r);
 		while ((line=br.readLine())!=null)
 		{
+			total++;
 			if (line.contains("<id>"))
 			{
 				final Pattern pattern = Pattern.compile("<id>(.+?)</id>");
@@ -139,13 +142,20 @@ public class RunApplication {
 				
 				System.out.println("Current topic: "+topic);
 				int number = Integer.parseInt(topic.substring(0,3));
-/*				if (number < 21)
+				
+				/*if (!topic.contentEquals("026r") )
+					continue;
+				/*if (number > 49)
 					continue;
 			/*	if (topic.contentEquals("001p"))
 				{*/
 				//public TermUtils (String topic, String path, Term term, int windowSize,double lambda, String features)
 				termUtils.setTopic(topic);
 				query.run(termUtils, topic, title, title+" "+description, title, query_time);
+				totalMap = totalMap + query.getBestMAP();
+				double currentMap = totalMap / total;
+				
+				System.out.println("Current MAP:" + currentMap);
 			/*	break;	
 				}*/
 					

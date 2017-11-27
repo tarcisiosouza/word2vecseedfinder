@@ -61,6 +61,8 @@ public class Query
 	private BufferedWriter bw;
 	private int maxSimTerms;
 	private int maxIter;
+	private double bestMAP = 0.0;
+	private String bestQuery;
 	private int candidateTerms;
 	private String runname;
 	private static HeidelTimeStandalone heidelTime;
@@ -225,7 +227,7 @@ public class Query
 	public void run (TermUtils termUtils,String topicID, String title, String initialQuery,String titlePlusDescription,
 			String eventDate) throws Exception
 	{
-		boolean result = false;
+		/*boolean result = false;
 		File fileToDelete = new File ("/home/souza/NTCIR-eval/ntcir11_Temporalia_taskdata/TaskData/TIR/"+topicID+"/"+topicID+"."+runname+".res");
 		try {
 			result = Files.deleteIfExists(fileToDelete.toPath());
@@ -233,7 +235,7 @@ public class Query
 		catch (Exception e){
 		
 			System.out.println (result);
-			}
+			}*/
 		
 		/*		BufferedWriter res = new BufferedWriter(new FileWriter("/home/souza/NTCIR-eval/ntcir12_Temporalia_taskdata/Evaluation Data/"+topicID+"/"+topicID+"."+runname+".res", true));
 		*/
@@ -306,28 +308,25 @@ public class Query
 		
 		evaluator.classifyDocuments(articles);
 		double precision = evaluator.getAvPrecision();
+		if (precision>bestMAP)
+		{
+			bestMAP = precision;
+			bestQuery =  initialQuery;
+		}
 		if (precision<=0)
 		{
 			processQuery(title,field,"0");
+			evaluator.classifyDocuments(articles);
+			precision = evaluator.getAvPrecision();
+			if (precision>bestMAP)
+			{
+				bestMAP = precision;
+				bestQuery = title;
+			}
 			usedQueries.add(title);
 		}
 		
 		deepLearning.loadModel("/home/souza/ntcir11_models/"+topicID+".txt");
-		
-	/*	Collection<String> nearest = deepLearning.getWordsNearest("trade",10);
-		
-		  for (Iterator iterator = nearest.iterator(); iterator.hasNext();) 
-		  {
-		        String element = (String) iterator.next();
-		        System.out.print (element +" ");
-
-		  }*/
-		
-		//articles =  urlScoreObject.urlScoreFunction(heidelTime,deepLearning,topicID, eventDate,articles,"0",urls,initialQuery);
-		//articles = (HashMap<LivingKnowledgeSnapshot, Double>) sortByComparator(articles,false);
-		
-		
-		
 		
 		System.out.println("precision: "+ precision + " totalRelevantPRF: "+ evaluator.getTotalRelevantPRF());
 		HtmlOutput html = new HtmlOutput ();
@@ -337,67 +336,68 @@ public class Query
 		
 		sbRes.put(html.getSbRes(), precision);
 		
-		//deepLearning.trainRetrievedDocuments(articlesWithoutDuplicates, "/home/souza/workspace/deepLearningSeedFinder/articles.txt");
-		//deepLearning.loadModel("pathToSaveModel.txt");
-
 		populateRetrivedDocuments();
-	/*	if (localmode)
-			deepLearning.trainRetrievedDocuments(articlesWithoutDuplicates, "/Users/tarcisio/Documents/workspace/deepLearningSeedFinder/articles.txt");
-		else
-			deepLearning.trainRetrievedDocuments(articlesWithoutDuplicates, "/home/souza/workspace/deepLearningSeedFinder/articles.txt"); */
-	//	deepLearning.loadModel("pathToSaveModel.txt");
-	//	extractEntitiesFromDocuments();
-		//queryExpansion.extractSimilarTermsQuery(deepLearning, annotations,entitiesCandidates);
-		
+	
 		if (field.contentEquals("url"))
 			queryExpansion.extractSimilarTermsUrls(deepLearning,gama);
 		else
 			queryExpansion.extractSimilarTermsText(deepLearning,false);
 		HashSet<String> nextQuery;
 		nextQuery = queryExpansion.getNextQuery();
-		//testBabelFy(articlesWithoutDuplicates);
-		//extractEntitiesFromDocuments();
 		int iter = 1;
 		String currentQueryString = null;
 	
 		field = "text";
 		
-		
+		titlePlusDescription = preprocess.removePunctuation(titlePlusDescription);
+		titlePlusDescription = preprocess.removeStopWords(titlePlusDescription);
+		titlePlusDescription = preprocess.removeDuplicates(titlePlusDescription);
+		title = preprocess.removePunctuation(title);
+        title = preprocess.removeStopWords(title);
+        title = preprocess.removeDuplicates(title);
 		while (iter <= maxIter)
 		{
-			
-			//maintaing always the initial query as the base query
 			currentQueryString = addTermsCurrentQuery(initialQuery + " ",nextQuery);
 		
 		        currentQueryString = preprocess.removePunctuation(currentQueryString);
 		        currentQueryString = preprocess.removeStopWords(currentQueryString);
 		        currentQueryString = preprocess.removeDuplicates(currentQueryString);
 			
+		        
+		        
 			if (usedQueries.contains(currentQueryString))
 			{
 				if (!usedQueries.contains(title))
 				{
 					currentQueryString = title;
-					queryExpansion.extractSimilarTermsText(deepLearning,false);
-					nextQuery = queryExpansion.getNextQuery();
-					currentQueryString = addTermsCurrentQuery(currentQueryString,nextQuery);	
+					//queryExpansion.extractSimilarTermsText(deepLearning,false);
+					//nextQuery = queryExpansion.getNextQuery();
+					//currentQueryString = addTermsCurrentQuery(currentQueryString,nextQuery);	
 				
 				}
 				else
 					{
-						if (!usedQueries.contains(titlePlusDescription))
-						{
-							currentQueryString = titlePlusDescription;
-							queryExpansion.extractSimilarTermsText(deepLearning,false);
-							nextQuery = queryExpansion.getNextQuery();
-							currentQueryString = addTermsCurrentQuery(currentQueryString,nextQuery);
+					
+//						if (!usedQueries.contains(titlePlusDescription))
+	//					{
+						//	currentQueryString = titlePlusDescription;
+							currentQueryString = currentQueryString + " " + queryExpansion.extractSimilarTermsQuery(deepLearning, currentQueryString);
+
+							if (usedQueries.contains(currentQueryString))
+							{
+								if (!currentQueryString.contentEquals(bestQuery))
+									currentQueryString = addTermsBestQuery (currentQueryString);
+							}
+							//	queryExpansion.extractSimilarTermsText(deepLearning,false);
+						//	nextQuery = queryExpansion.getNextQuery();
+						//	currentQueryString = addTermsCurrentQuery(currentQueryString,nextQuery);
 							
-						}
-							else
-						{
-								currentQueryString = currentQueryString + " " + queryExpansion.extractSimilarTermsQuery(deepLearning, currentQueryString);
-						
-						}
+		//				}
+			//				else
+				//		{
+							//	currentQueryString = currentQueryString + " " + queryExpansion.extractSimilarTermsQuery(deepLearning, currentQueryString);
+					//	
+						//}
 					}
 			}
 			
@@ -417,6 +417,14 @@ public class Query
 			html.outputArticlesHtml(sb, articles, Integer.toString(iter), evaluator,topicID,runname);
 			populateRetrivedDocuments();
 			evaluator.classifyDocuments(articles);
+			precision = evaluator.getAvPrecision();
+			
+			if (precision>bestMAP)
+			{
+				bestMAP = precision;
+				bestQuery = currentQueryString;
+			}
+			
 			sbResults.put(html.getSb(), evaluator.getAvPrecision());
 			sbRes.put(html.getSbRes(), evaluator.getAvPrecision());
 			
@@ -426,11 +434,14 @@ public class Query
 			queryExpansion.setArticles(articles);
 		//	extractEntitiesFromDocuments();
 	//		queryExpansion.extractSimilarTermsUrls();
-			
+				
 			queryExpansion.extractSimilarTermsText(deepLearning,false);
-			//queryExpansion.extractSimilarTermsQuery(deepLearning, annotations,entitiesCandidates);
 			nextQuery = queryExpansion.getNextQuery();
-			
+			currentQueryString = addTermsCurrentQuery(currentQueryString,nextQuery);
+			//queryExpansion.extractSimilarTermsQuery(deepLearning, currentQueryString);
+			//queryExpansion.extractSimilarTermsQuery(deepLearning, annotations,entitiesCandidates);
+			//nextQuery = queryExpansion.getNextQuery();
+			//currentQueryString = addTermsCurrentQuery(currentQueryString,nextQuery);
 			//evaluateDocuments();
 			iter ++;
 			
@@ -525,6 +536,14 @@ public class Query
 			
 		}
 		
+	}
+
+public double getBestMAP() {
+		return bestMAP;
+	}
+
+	public void setBestMAP(double bestMAP) {
+		this.bestMAP = bestMAP;
 	}
 
 public int getLimit() {
@@ -717,6 +736,21 @@ public int getLimit() {
 		
 	}
 	
+	public String addTermsBestQuery (String currentQuery)
+	{
+		StringTokenizer token = new StringTokenizer (bestQuery);
+		String outputQuery = currentQuery;
+		while (token.hasMoreTokens())
+		{
+			String term = token.nextToken();
+			if (outputQuery.contains(term))
+				continue;
+			outputQuery = outputQuery + " " + term;
+		}
+		
+		return outputQuery;
+		
+	}
 	public String addTermsCurrentQuery (String currentQuery,HashSet<String> nextQ)
 	{
 		

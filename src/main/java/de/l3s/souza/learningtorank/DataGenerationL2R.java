@@ -194,8 +194,6 @@ public class DataGenerationL2R {
 				}
 				
 				
-				
-				
 			}
 			
 			query.closeConnection();

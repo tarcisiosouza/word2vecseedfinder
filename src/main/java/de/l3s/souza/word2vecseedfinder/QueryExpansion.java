@@ -87,6 +87,19 @@ public class QueryExpansion {
 		return collectionSpecification;
 	}
 
+	
+
+	public boolean isL2r() {
+		return L2r;
+	}
+
+
+
+	public void setL2r(boolean l2r) {
+		L2r = l2r;
+	}
+
+
 
 	public void setCollectionSpecification(HashSet<String> collectionSpecification) {
 		this.collectionSpecification = collectionSpecification;
@@ -397,8 +410,8 @@ public class QueryExpansion {
 		/*	else
 				continue;
 			*/
-			/*if (pseudoRelevantDoc > 50)
-				break;*/
+			if (pseudoRelevantDoc > 100)
+				break;
 			StringTokenizer token = new StringTokenizer (s.getKey().getTemp(),",");
 			String currentCandidateQuery = "";
 			double currentScoreCandidateQuery = 0.0F;
@@ -466,8 +479,9 @@ public class QueryExpansion {
 	public void extractSimilarTermsText (deepLearningUtils deepLearning, boolean order) throws Exception
 	{
 		int pseudoRelevantDoc = 0;
+		int addedTerms=0;
 		nextQuery.clear();
-		featuresVectors = new StringBuilder ();
+		//featuresVectors = new StringBuilder ();
 		String currentQuery = "";
 		StringTokenizer tokenaQuery = new StringTokenizer (aQuery);
 		/*while (tokenaQuery.hasMoreTokens())
@@ -481,7 +495,7 @@ public class QueryExpansion {
 		}*/
 		
 		//termUtils.setQuery(currentQuery);
-		urlTerms.clear();
+		//urlTerms.clear();
 		HashMap<String,Double> classifiedDocuments = new HashMap<String,Double>();
 
 		for (Entry<LivingKnowledgeSnapshot, Double> s : articles.entrySet())	
@@ -536,8 +550,12 @@ public class QueryExpansion {
 							if (currentNearest.length()<=2)
 								continue;
 							double cos = deepLearning.getCosSimilarity(currentNearest, term);
-							if (urlTerms.size() < candidateTerms)
+							//if (urlTerms.size() < candidateTerms)
+							if (addedTerms < candidateTerms)
+							{
 								urlTerms.put(currentNearest,cos);
+								addedTerms++;
+							}
 							else
 								break;
 							//updateFeaturesVectors (currentNearest);
@@ -550,11 +568,12 @@ public class QueryExpansion {
 						}
 					}
 					
-					if (urlTerms.size() > candidateTerms)
+					//if (urlTerms.size() > candidateTerms)
+					if (addedTerms > candidateTerms)
 						break;
 				}
-				
-				if (urlTerms.size() > candidateTerms)
+				if (addedTerms > candidateTerms)
+				//if (urlTerms.size() > candidateTerms)
 					break;
 			}	
 		/*	
@@ -716,11 +735,12 @@ public class QueryExpansion {
 		StringTokenizer token = new StringTokenizer (query);
 		resetQueryExpansionTerms();
 		urlTerms = new HashMap<String,Double> ();
-		
+		nextQuery.clear();
+		featuresVectors = new StringBuilder ();
 		while (token.hasMoreTokens())
 		{
 			currentTerm = token.nextToken();
-			Collection<String> nearest = deepLearning.getWordsNearest(currentTerm, 1);
+			Collection<String> nearest = deepLearning.getWordsNearest(currentTerm, totalSimilar);
 			
 			  for (Iterator iterator = nearest.iterator(); iterator.hasNext();) 
 			  {
@@ -731,7 +751,7 @@ public class QueryExpansion {
 			
 		}
 		
-		for (Entry<String, Double> s : urlTerms.entrySet())	
+	/*	for (Entry<String, Double> s : urlTerms.entrySet())	
 		{
 			token = new StringTokenizer (query);
 		
@@ -749,7 +769,7 @@ public class QueryExpansion {
 			
 			urlTerms.put(currentTerm,sim);
 		}
-		
+		*/
 		if (L2r)
 		{
 			updateFeaturesVectors ();
@@ -778,6 +798,8 @@ public class QueryExpansion {
 				newQuery += " " + s.getKey();
 				terms ++;
 				termsUsedFreq.put(s.getKey(), value+1);
+				nextQuery.add(s.getKey());
+
 			}
 		}
 		
@@ -1036,6 +1058,8 @@ public class QueryExpansion {
 		{
     	
     		i++;
+    		if (featuresVectors.toString().contains(s.getKey()))
+    			continue;
     	termL2r.setTermString(s.getKey());
 		termUtils.setTerm(termL2r);
 		termUtils.calculateFeaturesCollectionOnline(collection);
@@ -1055,7 +1079,7 @@ public class QueryExpansion {
 			indice++;
 		}
 			
-		featuresVectors.append(" #"+termL2r.getTermString()+"\n");
+		featuresVectors.append(" # "+termL2r.getTermString()+"\n");
 		
 		}
     }
