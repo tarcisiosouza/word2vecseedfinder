@@ -152,6 +152,7 @@ public class RunApplication {
 				{*/
 				//public TermUtils (String topic, String path, Term term, int windowSize,double lambda, String features)
 				termUtils.setTopic(topic);
+				query.setBestMAP(0.0);
 				query.run(termUtils, topic, title, title+" "+description, title, query_time);
 				totalMap = totalMap + query.getBestMAP();
 				double currentMap = totalMap / total;
