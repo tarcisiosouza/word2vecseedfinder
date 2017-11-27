@@ -86,7 +86,7 @@ public class RunApplication {
 				maxIter,alpha,beta,gama,scoreParam,L2r);
 		while ((line=br.readLine())!=null)
 		{
-			total++;
+			
 			if (line.contains("<id>"))
 			{
 				final Pattern pattern = Pattern.compile("<id>(.+?)</id>");
@@ -120,6 +120,7 @@ public class RunApplication {
 			
 			if (line.contains("<subtopic id"))
 			{
+				total++;
 				Pattern pattern = Pattern.compile("<subtopic id=\"(.+?)\"");
 				Matcher m = pattern.matcher(line);
 				m.find();
