@@ -489,6 +489,7 @@ public class QueryExpansion {
 	public void extractSimilarTermsText (deepLearningUtils deepLearning, boolean order) throws Exception
 	{
 		int pseudoRelevantDoc = 0;
+		urlTerms.clear();
 		int addedTerms=0;
 		nextQuery.clear();
 		//featuresVectors = new StringBuilder ();
