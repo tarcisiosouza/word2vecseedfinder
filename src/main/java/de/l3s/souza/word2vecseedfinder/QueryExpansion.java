@@ -259,8 +259,8 @@ public class QueryExpansion {
 			classifiedDocuments = LivingKnowledgeEvaluator.classifyDocuments(articles);
 			double relevance = classifiedDocuments.get(s.getKey().getDocId());
 			
-			if (pseudoRelv > 20)
-				break;
+			/*if (pseudoRelv > 20)
+				break;*/
 			if ((relevance>0))
 				//continue;
 			//else
@@ -313,9 +313,19 @@ public class QueryExpansion {
 			}
 		}
 		
-		urlTerms = normalizeScores (urlTerms);
+		if (L2r)
+		{
+			updateFeaturesVectors ();
+			String ranked = l2rEvaluator.rankToString("/home/souza/mymodels/f3.cas", featuresVectors.toString());
+			reScoreTermsL2R (ranked);
+		}	
+			//System.out.println(ranked);
+			
+		if (!L2r)
+	        urlTerms = normalizeScores (urlTerms);
 		
-		for (Entry<String,Double> s: urlTerms.entrySet())
+		
+	/*	for (Entry<String,Double> s: urlTerms.entrySet())
 		{
 			
 			String candidate = s.getKey();
@@ -335,7 +345,7 @@ public class QueryExpansion {
 			
 			urlTerms.put(s.getKey(), finalScore);
 		}
-		
+		*/
 		
 		Map<String, Double> ordered = sortByComparator (urlTerms,DESC);
 		int terms = 0;
@@ -575,7 +585,9 @@ public class QueryExpansion {
 				if (addedTerms > candidateTerms)
 				//if (urlTerms.size() > candidateTerms)
 					break;
-			}	
+			}
+			
+			addedTerms=0;
 		/*	
 			StringTokenizer tokenTitle = new StringTokenizer (s.getKey().getTitle());
 			while (tokenTitle.hasMoreTokens())
@@ -641,15 +653,18 @@ public class QueryExpansion {
 				if (!nearest.isEmpty())
 				{
 					
-					if (urlTerms.size() < candidateTerms)
+					if (addedTerms < candidateTerms/2)
+					{
 						urlTerms.put(term, relevance);
+						addedTerms++;
+					}
 					else
 						break;
 					
 				//	updateFeaturesVectors (term);
 				}	
 				
-				if (urlTerms.size() > candidateTerms)
+				if (addedTerms > candidateTerms/2)
 					break;
 			}	
 			/*if (termsCandidateQuery>0)

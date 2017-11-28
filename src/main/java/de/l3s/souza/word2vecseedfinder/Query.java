@@ -347,7 +347,7 @@ public class Query
 		int iter = 1;
 		String currentQueryString = null;
 	
-		field = "text";
+		//field = "text";
 		
 		titlePlusDescription = preprocess.removePunctuation(titlePlusDescription);
 		titlePlusDescription = preprocess.removeStopWords(titlePlusDescription);
