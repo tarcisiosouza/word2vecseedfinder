@@ -561,7 +561,7 @@ public class QueryExpansion {
 								continue;
 							double cos = deepLearning.getCosSimilarity(currentNearest, term);
 							//if (urlTerms.size() < candidateTerms)
-							if (addedTerms < candidateTerms/2)
+							if (addedTerms < candidateTerms)
 							{
 								urlTerms.put(currentNearest,cos);
 								addedTerms++;
@@ -579,14 +579,14 @@ public class QueryExpansion {
 					}
 					
 					//if (urlTerms.size() > candidateTerms)
-					if (addedTerms > candidateTerms/2)
+					if (addedTerms > candidateTerms)
 						break;
 				}
-				if (addedTerms > candidateTerms/2)
+				if (addedTerms > candidateTerms)
 				//if (urlTerms.size() > candidateTerms)
 					break;
 			}
-			
+			/*
 			addedTerms=0;
 			
 			StringTokenizer tokenTitle = new StringTokenizer (s.getKey().getTitle());
@@ -630,7 +630,7 @@ public class QueryExpansion {
 							currentCandidateQuery += " " + currentNearest;
 							currentScoreCandidateQuery += cos;
 							termsCandidateQuery++;
-						}*/
+						}
 					}
 				}
 				
