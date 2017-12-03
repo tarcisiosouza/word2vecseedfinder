@@ -1,16 +1,21 @@
 package de.l3s.souza.word2vecseedfinder;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.InputStream;
+import java.io.OutputStreamWriter;
+import java.util.ArrayList;
 import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import de.l3s.souza.learningtorank.Term;
 import de.l3s.souza.learningtorank.TermUtils;
+import de.l3s.souza.evaluation.Point;
 
 public class RunApplication {
 
@@ -35,9 +40,13 @@ public class RunApplication {
 	private static deepLearningUtils deepLearning;
 	private static int candidateTerms;
 	private static boolean L2r;
+	private static ArrayList<Point> overallPrecRecall = new ArrayList<Point> ();
 	
 	public static void main (String args[]) throws Exception
 	{
+		
+		BufferedWriter out = new BufferedWriter
+    		    (new OutputStreamWriter(new FileOutputStream("PrecRecallCurve.txt"),"UTF-8"));
 		
 		InputStream inputStream = RunApplication.class.getClassLoader().getResourceAsStream(propFileName);
 		config = new Properties ();
@@ -145,8 +154,8 @@ public class RunApplication {
 				int number = Integer.parseInt(topic.substring(0,3));
 				
 				/*if (!topic.contentEquals("026r") )
-					continue;
-				/*if (number > 49)
+					continue;*/
+				if (number > 1)
 					continue;
 			/*	if (topic.contentEquals("001p"))
 				{*/
@@ -158,6 +167,27 @@ public class RunApplication {
 				double currentMap = totalMap / total;
 				
 				System.out.println("Current MAP:" + currentMap);
+				
+				ArrayList<Point> currentPrecRecall = query.getEvaluator().getBestprecRecall();
+				
+				if (overallPrecRecall.isEmpty())
+					overallPrecRecall = currentPrecRecall; 
+				else
+					{	
+						for (int cPoint=0;i<currentPrecRecall.size();cPoint++)
+						{
+							Point p = new Point ();
+							Point q = new Point ();
+							p = currentPrecRecall.get(cPoint);
+							q = overallPrecRecall.get(cPoint);
+							
+							q.setPrecision( (q.getPrecision()+p.getPrecision()) );
+							q.setRecall( (q.getRecall()+p.getRecall()) );
+							
+							overallPrecRecall.set(cPoint, q);
+						}
+					
+					}
 			/*	break;	
 				}*/
 					
@@ -165,6 +195,20 @@ public class RunApplication {
 			
 			
 		}
+		
+		StringBuilder sb = new StringBuilder ();
+		for (int j=0;j<overallPrecRecall.size();j++)
+		{
+			Point q = new Point ();
+			
+			q = overallPrecRecall.get(j);
+			double OverAllRecall = q.getRecall()/total;
+			double OverAllPrecision = q.getPrecision()/total;
+			
+			sb.append( OverAllRecall + " " + OverAllPrecision + "\n");
+		}
+		
+		out.write(sb.toString());
 
 	}
 }

@@ -64,6 +64,7 @@ public class Query
 	private double bestMAP = 0.0;
 	private String bestQuery;
 	private int candidateTerms;
+	private LivingKnowledgeEvaluation evaluator;
 	private String runname;
 	private static HeidelTimeStandalone heidelTime;
 	private int maxDoc;
@@ -304,7 +305,7 @@ public class Query
 		queryExpansion = new QueryExpansion(preprocess,termUtils,maxUsedFreqTerm,topicID,initialQuery,titlePlusDescription ,articlesWithoutDuplicates, articles, 
 				maxSimTerms, candidateTerms,terms,eventDate, alpha, beta,L2r);
 
-		LivingKnowledgeEvaluation evaluator = queryExpansion.getLivingKnowledgeEvaluator();
+		evaluator = queryExpansion.getLivingKnowledgeEvaluator();
 		
 		evaluator.classifyDocuments(articles);
 		double precision = evaluator.getAvPrecision();
@@ -357,7 +358,7 @@ public class Query
         title = preprocess.removeDuplicates(title);
 		while (iter <= maxIter)
 		{
-			currentQueryString = addTermsCurrentQuery(initialQuery + " ",nextQuery);
+			currentQueryString = addTermsCurrentQuery(bestQuery + " ",nextQuery);
 		
 		        currentQueryString = preprocess.removePunctuation(currentQueryString);
 		        currentQueryString = preprocess.removeStopWords(currentQueryString);
@@ -536,6 +537,14 @@ public class Query
 			
 		}
 		
+	}
+
+public LivingKnowledgeEvaluation getEvaluator() {
+		return evaluator;
+	}
+
+	public void setEvaluator(LivingKnowledgeEvaluation evaluator) {
+		this.evaluator = evaluator;
 	}
 
 public double getBestMAP() {

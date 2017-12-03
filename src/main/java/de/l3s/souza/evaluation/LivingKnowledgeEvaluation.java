@@ -6,6 +6,7 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -29,16 +30,20 @@ public class LivingKnowledgeEvaluation {
 	private static int totalRelevant;
 	private int totalRelevantPRF;
 	private double avPrecision;
+	private ArrayList<Point> BestprecRecall;
+	private double BestAvPrecision;
 	
 	public double getAvPrecision() {
 		return avPrecision;
 	}
-	
+
 	public LivingKnowledgeEvaluation (String topic) throws IOException
 	{		
 		documents.clear();
 		totalRelevant = 0;
 		avPrecision = 0;
+		BestAvPrecision = 0;
+		setBestprecRecall(new ArrayList<Point>());
 	//	InputStream inputStream = LivingKnowledgeEvaluation.class.getClassLoader().getResourceAsStream(propFileName);
 		config = new Properties ();
 		
@@ -111,8 +116,11 @@ public class LivingKnowledgeEvaluation {
 		int i = 0;
 		int relevant = 0;
 		double precision;
+		double recall;
 		
 		totalRelevantPRF = 0;
+		ArrayList<Point> precRecall = new ArrayList<Point>();
+		
 		HashMap<String,Double> classified = new HashMap<String,Double>();
 		//HashMap<String,Double>
 		for (LivingKnowledgeSnapshot article : incomingDocuments.keySet())
@@ -132,7 +140,12 @@ public class LivingKnowledgeEvaluation {
 					numberRelevance = 0;
 					if (i<=total)
 					{
-						precision = relevant / i;
+						precision = (double) relevant / i;
+						recall = relevant / totalRelevant;
+						Point point = new Point ();
+						point.setPrecision(precision);
+						point.setRecall(recall);
+						precRecall.add(point);
 						sum +=precision;
 						
 					}
@@ -144,6 +157,11 @@ public class LivingKnowledgeEvaluation {
 					{
 						relevant++;
 						precision = (double) relevant/i;
+						recall = relevant / totalRelevant;
+						Point point = new Point ();
+						point.setPrecision(precision);
+						point.setRecall(recall);
+						precRecall.add(point);
 						sum = sum + precision;
 						
 					}
@@ -156,7 +174,12 @@ public class LivingKnowledgeEvaluation {
 				classified.put(article.getDocId(), (double)0);
 				if (i<=total)
 				{
-					precision = relevant / i;
+					precision = (double) relevant / i;
+					recall = relevant / totalRelevant;
+					Point point = new Point ();
+					point.setPrecision(precision);
+					point.setRecall(recall);
+					precRecall.add(point);
 					sum +=precision;
 				}
 			}
@@ -168,6 +191,11 @@ public class LivingKnowledgeEvaluation {
 		else
 			 avPrecision = (double) sum/total;
 		
+		if (BestAvPrecision < avPrecision)
+		{
+			BestAvPrecision = avPrecision;
+			setBestprecRecall(precRecall);
+		}
 		return classified;
 	}
 	
@@ -237,5 +265,13 @@ public class LivingKnowledgeEvaluation {
 	            }
 
 	            return sortedMap;
+	}
+
+	public ArrayList<Point> getBestprecRecall() {
+		return BestprecRecall;
+	}
+
+	private void setBestprecRecall(ArrayList<Point> bestprecRecall) {
+		BestprecRecall = bestprecRecall;
 	}
 }
