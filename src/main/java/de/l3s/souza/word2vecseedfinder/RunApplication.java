@@ -205,8 +205,8 @@ public class RunApplication {
 			Point q = new Point ();
 			
 			q = overallPrecRecall.get(j);
-			double OverAllRecall = q.getRecall()/total;
-			double OverAllPrecision = q.getPrecision()/total;
+			double OverAllRecall = (double) q.getRecall()/total;
+			double OverAllPrecision = (double) q.getPrecision()/total;
 			
 			sb.append( OverAllRecall + " " + OverAllPrecision + "\n");
 		}
