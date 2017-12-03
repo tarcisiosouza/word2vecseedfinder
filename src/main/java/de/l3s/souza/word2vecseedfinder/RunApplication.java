@@ -20,6 +20,7 @@ import de.l3s.souza.evaluation.Point;
 public class RunApplication {
 
 	private static String propFileName = "seedfinderparam.properties";
+	private static double currentMap;
 	private static  Properties config;
 	private static int limit;
 	private static int maxSimTerms;
@@ -56,7 +57,9 @@ public class RunApplication {
 		if (inputStream != null) {
 			config.load(inputStream);
 		} else {
+			out.close();
 			throw new FileNotFoundException("property file '" + propFileName + "' not found in the classpath");
+			
 		}
 		
 		L2r = Boolean.parseBoolean(config.getProperty("L2r"));
@@ -155,7 +158,7 @@ public class RunApplication {
 				
 				/*if (!topic.contentEquals("026r") )
 					continue;*/
-				if (number > 1)
+			/*	if (number > 1)
 					continue;
 			/*	if (topic.contentEquals("001p"))
 				{*/
@@ -164,7 +167,7 @@ public class RunApplication {
 				query.setBestMAP(0.0);
 				query.run(termUtils, topic, title, title+" "+description, title, query_time);
 				totalMap = totalMap + query.getBestMAP();
-				double currentMap = totalMap / total;
+				currentMap = totalMap / total;
 				
 				System.out.println("Current MAP:" + currentMap);
 				
@@ -208,8 +211,9 @@ public class RunApplication {
 			sb.append( OverAllRecall + " " + OverAllPrecision + "\n");
 		}
 		
+		out.write("MAP " + currentMap + "\n");
 		out.write(sb.toString());
-
+		out.close();
 	}
 }
 
