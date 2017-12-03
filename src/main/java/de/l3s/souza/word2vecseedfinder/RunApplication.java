@@ -174,7 +174,7 @@ public class RunApplication {
 					overallPrecRecall = currentPrecRecall; 
 				else
 					{	
-						for (int cPoint=0;i<currentPrecRecall.size()-1;cPoint++)
+						for (int cPoint=0;cPoint<currentPrecRecall.size();cPoint++)
 						{
 							Point p = new Point ();
 							Point q = new Point ();
