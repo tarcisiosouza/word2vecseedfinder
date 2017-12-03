@@ -140,7 +140,7 @@ public class LivingKnowledgeEvaluation {
 					numberRelevance = 0;
 					if (i<=total)
 					{
-						precision = (double) relevant / i;
+						precision =  relevant / i;
 						recall = relevant / totalRelevant;
 						Point point = new Point ();
 						point.setPrecision(precision);
@@ -156,7 +156,7 @@ public class LivingKnowledgeEvaluation {
 					if (i<=total)
 					{
 						relevant++;
-						precision = (double) relevant/i;
+						precision =  relevant/i;
 						recall = relevant / totalRelevant;
 						Point point = new Point ();
 						point.setPrecision(precision);
@@ -174,7 +174,7 @@ public class LivingKnowledgeEvaluation {
 				classified.put(article.getDocId(), (double)0);
 				if (i<=total)
 				{
-					precision = (double) relevant / i;
+					precision =  relevant / i;
 					recall = relevant / totalRelevant;
 					Point point = new Point ();
 					point.setPrecision(precision);
@@ -189,7 +189,7 @@ public class LivingKnowledgeEvaluation {
 		if (relevant==0)
 			 avPrecision = 0.0f;
 		else
-			 avPrecision = (double) sum/total;
+			 avPrecision = sum/total;
 		
 		if (BestAvPrecision < avPrecision)
 		{
