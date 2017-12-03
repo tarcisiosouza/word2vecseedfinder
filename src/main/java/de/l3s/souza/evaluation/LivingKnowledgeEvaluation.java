@@ -41,8 +41,8 @@ public class LivingKnowledgeEvaluation {
 	{		
 		documents.clear();
 		totalRelevant = 0;
-		avPrecision = 0;
-		BestAvPrecision = 0;
+		avPrecision = 0.0f;
+		BestAvPrecision = 0.0f;
 		setBestprecRecall(new ArrayList<Point>());
 	//	InputStream inputStream = LivingKnowledgeEvaluation.class.getClassLoader().getResourceAsStream(propFileName);
 		config = new Properties ();
@@ -191,7 +191,7 @@ public class LivingKnowledgeEvaluation {
 		else
 			 avPrecision = (double) sum/total;
 		
-		if (BestAvPrecision < avPrecision)
+		if (BestAvPrecision <= avPrecision)
 		{
 			BestAvPrecision = avPrecision;
 			setBestprecRecall(precRecall);
