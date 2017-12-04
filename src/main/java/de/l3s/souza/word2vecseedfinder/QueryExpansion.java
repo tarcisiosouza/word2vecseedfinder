@@ -417,9 +417,9 @@ public class QueryExpansion {
 			
 			if (relevance > 0)
 				relevantDocuments.add(s.getKey().getDocId());
-		/*	else
+			else
 				continue;
-			*/
+			
 			if (pseudoRelevantDoc > 100)
 				break;
 			StringTokenizer token = new StringTokenizer (s.getKey().getTemp(),",");
@@ -492,6 +492,7 @@ public class QueryExpansion {
 		urlTerms.clear();
 		int addedTerms=0;
 		nextQuery.clear();
+		int currentRelevant = 0;
 		//featuresVectors = new StringBuilder ();
 		String currentQuery = "";
 		StringTokenizer tokenaQuery = new StringTokenizer (aQuery);
@@ -516,10 +517,13 @@ public class QueryExpansion {
 			double relevance = classifiedDocuments.get(s.getKey().getDocId());
 			
 			if (relevance > 0)
+			{
 				relevantDocuments.add(s.getKey().getDocId());
-		/*	else
+				currentRelevant++;
+			}
+			else
 				continue;
-			*/
+			
 			/*if (pseudoRelevantDoc > 50)
 				break;*/
 			StringTokenizer token = new StringTokenizer (s.getKey().getTemp(),",");
@@ -676,6 +680,13 @@ public class QueryExpansion {
 			*/
 			
 		}
+		
+		if (currentRelevant == 0)
+		{
+			extractSimilarTermsQuery (deepLearning, this.currentQuery) ;
+			return;
+		}
+		
 	if (L2r)
 	{
 		updateFeaturesVectors ();
