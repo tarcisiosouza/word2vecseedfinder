@@ -366,11 +366,11 @@ public class Query
 		title = preprocess.removePunctuation(title);
         title = preprocess.removeStopWords(title);
         title = preprocess.removeDuplicates(title);
-        currentQueryString = addTermsCurrentQuery(bestQuery + " ",nextQuery);
 		while (iter <= maxIter)
 		{
 			
-		
+	        currentQueryString = addTermsCurrentQuery(bestQuery + " ",nextQuery);
+
 		        currentQueryString = preprocess.removePunctuation(currentQueryString);
 		        currentQueryString = preprocess.removeStopWords(currentQueryString);
 		        currentQueryString = preprocess.removeDuplicates(currentQueryString);

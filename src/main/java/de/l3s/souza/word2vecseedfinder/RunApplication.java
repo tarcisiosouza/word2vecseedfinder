@@ -218,7 +218,7 @@ public class RunApplication {
 			
 			sb.append( OverAllRecall + " " + OverAllPrecision + "\n");
 		}
-		
+		//
 		totalPrecisionat20 = totalPrecisionat20/total;
 		totalnDCGat20 = totalnDCGat20/total;
 		out.write("MAP " + currentMap + "\n");

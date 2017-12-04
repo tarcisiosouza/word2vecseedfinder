@@ -250,15 +250,15 @@ public class LivingKnowledgeEvaluation {
 			relevant = 0.0f;
 			
 			if (relevance.contentEquals("L1") )
-				relevant = 1.0;
+				relevant = 1.0f;
 			
 			if ((relevance.contentEquals("L2")))
-				relevant = 2.0;
+				relevant = 2.0f;
 			
 			sum = sum + (Math.pow(2.0, relevant) - 1)/Math.log(1+i);
 		}
 	
-		return sum;
+		return sum/total;
 	}
 	
 	public String getArticleRelevance (String docID)
