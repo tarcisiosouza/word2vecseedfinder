@@ -65,6 +65,7 @@ public class Query
 	private double bestMAP = 0.0;
 	private String bestQuery;
 	private int candidateTerms;
+	private double nDCG;
 	private LivingKnowledgeEvaluation evaluator;
 	private String runname;
 	private static HeidelTimeStandalone heidelTime;
@@ -226,6 +227,14 @@ public class Query
 		this.L2r=L2r;
 	}
 	
+	public double getnDCG() {
+		return nDCG;
+	}
+
+	public void setnDCG(double nDCG) {
+		this.nDCG = nDCG;
+	}
+
 	public void run (TermUtils termUtils,String topicID, String title, String initialQuery,String titlePlusDescription,
 			String eventDate) throws Exception
 	{
@@ -392,7 +401,7 @@ public class Query
 									currentQueryString = addTermsBestQuery (currentQueryString);
 								else
 									currentQueryString = currentQueryString + " " + queryExpansion.extractSimilarTermsQuery(deepLearning, currentQueryString);
-								
+							/*	
 								int size = currentQueryString.length();
 								int position = 0;
 								while (usedQueries.contains(currentQueryString))
@@ -403,7 +412,7 @@ public class Query
 									
 									currentQueryString = currentQueryString + " " + queryExpansion.extractSimilarTermsQuery(deepLearning, currentQueryString,position);
 									position++;
-								}	
+								}*/	
 								
 							}
 							//	queryExpansion.extractSimilarTermsText(deepLearning,false);
@@ -513,6 +522,7 @@ public class Query
 			}
 		}
 		precisionAt20 = evaluator.getPrecisionAtn(sbFinalRes, 20);
+		nDCG = evaluator.getnDCGAtn(sbFinalRes, 20);
 		
 	/*	for(Entry<LivingKnowledgeSnapshot, Double> s : finalDocSet.entrySet())
 		{

@@ -34,6 +34,7 @@ public class RunApplication {
 	private static double gama;
 	private static double scoreParam;
 	private static double totalPrecisionat20;
+	private static double totalnDCGat20;
 	private static String runname;
 	private static int maxUsedFreqTerm;
 	private static String features;
@@ -64,6 +65,7 @@ public class RunApplication {
 		}
 		
 		totalPrecisionat20 = 0;
+		totalnDCGat20 = 0;
 		L2r = Boolean.parseBoolean(config.getProperty("L2r"));
 		candidateTerms = Integer.parseInt(config.getProperty("candidateTerms"));
 		features = config.getProperty("features");
@@ -171,10 +173,12 @@ public class RunApplication {
 				totalMap = totalMap + query.getBestMAP();
 				currentMap = totalMap / total;
 				totalPrecisionat20 = totalPrecisionat20 + query.getPrecisionAt20();
-				
+				totalnDCGat20 = totalnDCGat20 + query.getnDCG();
+
 				System.out.println("Current MAP:" + currentMap);
 				System.out.println("Current P@20:" + totalPrecisionat20/total);
-				
+				System.out.println("Current nDCG@20:" + totalnDCGat20/total);
+
 				ArrayList<Point> currentPrecRecall = query.getEvaluator().getBestprecRecall();
 				
 				if (overallPrecRecall.isEmpty())
@@ -216,9 +220,11 @@ public class RunApplication {
 		}
 		
 		totalPrecisionat20 = totalPrecisionat20/total;
-		
+		totalnDCGat20 = totalnDCGat20/total;
 		out.write("MAP " + currentMap + "\n");
 		out.write("P@20 " + totalPrecisionat20 + "\n");
+		out.write("nDCG@20 " + totalnDCGat20 + "\n");
+
 		out.write(sb.toString());
 		out.close();
 	}

@@ -230,6 +230,37 @@ public class LivingKnowledgeEvaluation {
 		return precision;
 	}
 	
+	public double getnDCGAtn (StringBuilder results, int total)
+	{
+		double sum = 0.0f;
+		
+		int i = 0;
+		double relevant = 0.0f;
+		StringTokenizer token = new StringTokenizer (results.toString());
+		
+		while (token.hasMoreTokens())
+		{
+			i++;
+			
+			if (i > total)
+				break;
+			
+			String current = token.nextToken();
+			String relevance = getArticleRelevance (current);
+			relevant = 0.0f;
+			
+			if (relevance.contentEquals("L1") )
+				relevant = 1.0;
+			
+			if ((relevance.contentEquals("L2")))
+				relevant = 2.0;
+			
+			sum = sum + (Math.pow(2.0, relevant) - 1)/Math.log(1+i);
+		}
+	
+		return sum;
+	}
+	
 	public String getArticleRelevance (String docID)
 	{
 		if (documents.containsKey(docID))
