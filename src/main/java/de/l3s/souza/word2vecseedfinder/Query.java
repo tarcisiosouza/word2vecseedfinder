@@ -357,9 +357,10 @@ public class Query
 		title = preprocess.removePunctuation(title);
         title = preprocess.removeStopWords(title);
         title = preprocess.removeDuplicates(title);
+        currentQueryString = addTermsCurrentQuery(bestQuery + " ",nextQuery);
 		while (iter <= maxIter)
 		{
-			currentQueryString = addTermsCurrentQuery(bestQuery + " ",nextQuery);
+			
 		
 		        currentQueryString = preprocess.removePunctuation(currentQueryString);
 		        currentQueryString = preprocess.removeStopWords(currentQueryString);
@@ -389,6 +390,9 @@ public class Query
 							{
 								if (!currentQueryString.contentEquals(bestQuery))
 									currentQueryString = addTermsBestQuery (currentQueryString);
+								else
+									currentQueryString = currentQueryString + " " + queryExpansion.extractSimilarTermsQuery(deepLearning, currentQueryString);
+								
 							}
 							//	queryExpansion.extractSimilarTermsText(deepLearning,false);
 						//	nextQuery = queryExpansion.getNextQuery();

@@ -405,7 +405,6 @@ public class QueryExpansion {
 	{
 		int pseudoRelevantDoc = 0;
 		
-	
 		urlTerms.clear();
 		HashMap<String,Double> classifiedDocuments = new HashMap<String,Double>();
 
