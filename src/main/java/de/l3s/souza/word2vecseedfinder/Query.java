@@ -393,6 +393,18 @@ public class Query
 								else
 									currentQueryString = currentQueryString + " " + queryExpansion.extractSimilarTermsQuery(deepLearning, currentQueryString);
 								
+								int size = currentQueryString.length();
+								int position = 0;
+								while (usedQueries.contains(currentQueryString))
+								{
+									
+									if (position>size)
+										break;
+									
+									currentQueryString = currentQueryString + " " + queryExpansion.extractSimilarTermsQuery(deepLearning, currentQueryString,position);
+									position++;
+								}	
+								
 							}
 							//	queryExpansion.extractSimilarTermsText(deepLearning,false);
 						//	nextQuery = queryExpansion.getNextQuery();

@@ -520,7 +520,7 @@ public class QueryExpansion {
 				relevantDocuments.add(s.getKey().getDocId());
 				currentRelevant++;
 			}
-			else
+		/*	else
 				continue;
 			
 			/*if (pseudoRelevantDoc > 50)
@@ -680,12 +680,12 @@ public class QueryExpansion {
 			
 		}
 		
-		if (currentRelevant == 0)
+	/*	if (currentRelevant == 0)
 		{
 			extractSimilarTermsQuery (deepLearning, this.currentQuery) ;
 			return;
 		}
-		
+		*/
 	if (L2r)
 	{
 		updateFeaturesVectors ();
@@ -778,6 +778,98 @@ public class QueryExpansion {
 
 			  }
 			
+		}
+		
+	/*	for (Entry<String, Double> s : urlTerms.entrySet())	
+		{
+			token = new StringTokenizer (query);
+		
+			currentTerm = s.getKey();
+			double sim = 0;
+			
+			while (token.hasMoreTokens())
+			{
+				sim = sim + deepLearning.getCosSimilarity(token.nextToken(), currentTerm);
+				if (sim > 1)
+				{
+					sim = 1;
+				}
+			}
+			
+			urlTerms.put(currentTerm,sim);
+		}
+		*/
+		if (L2r)
+		{
+			updateFeaturesVectors ();
+			String ranked = l2rEvaluator.rankToString("/home/souza/mymodels/f3.cas", featuresVectors.toString());
+			reScoreTermsL2R (ranked);
+		}	
+			//System.out.println(ranked);
+			
+		if (!L2r)
+	        urlTerms = normalizeScores (urlTerms);
+		//calculateScores(deepLearning);
+		//querySimilarTerms = normalizeScores (querySimilarTerms);
+		
+		Map<String, Double> ordered = sortByComparator (querySimilarTerms,DESC);
+		int terms = 0;
+		for (Entry<String, Double> s : ordered.entrySet())
+		{
+			int value = 0;
+			if (termsUsedFreq.containsKey(s.getKey()))
+				value = termsUsedFreq.get(s.getKey());
+			else
+				termsUsedFreq.put(s.getKey(), value);
+			
+			if (terms <= expandTerms && value < maxFreqUsedTerm)
+			{
+				newQuery += " " + s.getKey();
+				terms ++;
+				termsUsedFreq.put(s.getKey(), value+1);
+				nextQuery.add(s.getKey());
+
+			}
+		}
+		
+		return newQuery;
+	}
+	
+	public String extractSimilarTermsQuery (deepLearningUtils deepLearning, String query, int pos) throws Exception
+	{
+		String currentTerm;
+		String newQuery = "";
+		int i = 0;
+		StringTokenizer token = new StringTokenizer (query);
+		resetQueryExpansionTerms();
+		urlTerms = new HashMap<String,Double> ();
+		nextQuery.clear();
+		featuresVectors = new StringBuilder ();
+		while (token.hasMoreTokens())
+		{
+
+			if (i>pos)
+				break;
+			
+			if (i!=pos)
+			{
+				currentTerm = token.nextToken();
+				i++;
+				continue;
+			}
+			else	
+				currentTerm = token.nextToken();
+			
+			Collection<String> nearest = deepLearning.getWordsNearest(currentTerm, totalSimilar);
+			
+			  for (Iterator iterator = nearest.iterator(); iterator.hasNext();) 
+			  {
+			        String element = (String) iterator.next();
+			        urlTerms.put(element, 1.0);
+
+			  }
+			  i++;
+				
 		}
 		
 	/*	for (Entry<String, Double> s : urlTerms.entrySet())	
