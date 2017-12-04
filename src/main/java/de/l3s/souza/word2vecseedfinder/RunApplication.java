@@ -33,6 +33,7 @@ public class RunApplication {
 	private static double beta;
 	private static double gama;
 	private static double scoreParam;
+	private static double totalPrecisionat20;
 	private static String runname;
 	private static int maxUsedFreqTerm;
 	private static String features;
@@ -62,6 +63,7 @@ public class RunApplication {
 			
 		}
 		
+		totalPrecisionat20 = 0;
 		L2r = Boolean.parseBoolean(config.getProperty("L2r"));
 		candidateTerms = Integer.parseInt(config.getProperty("candidateTerms"));
 		features = config.getProperty("features");
@@ -156,20 +158,22 @@ public class RunApplication {
 				System.out.println("Current topic: "+topic);
 				int number = Integer.parseInt(topic.substring(0,3));
 				
-				/*if (!topic.contentEquals("026r") )
-					continue;*/
-			/*	if (number > 1)
+			/*	if (!topic.contentEquals("050r") )
+					continue;
+				/*if (number < 50)
 					continue;
 			/*	if (topic.contentEquals("001p"))
 				{*/
 				//public TermUtils (String topic, String path, Term term, int windowSize,double lambda, String features)
 				termUtils.setTopic(topic);
 				query.setBestMAP(0.0);
-				query.run(termUtils, topic, title, title+" "+description, title, query_time);
+				query.run(termUtils, topic, title, title+" "+description+" "+line, title, query_time);
 				totalMap = totalMap + query.getBestMAP();
 				currentMap = totalMap / total;
+				totalPrecisionat20 = totalPrecisionat20 + query.getPrecisionAt20();
 				
 				System.out.println("Current MAP:" + currentMap);
+				System.out.println("Current P@20:" + totalPrecisionat20/total);
 				
 				ArrayList<Point> currentPrecRecall = query.getEvaluator().getBestprecRecall();
 				
@@ -211,7 +215,10 @@ public class RunApplication {
 			sb.append( OverAllRecall + " " + OverAllPrecision + "\n");
 		}
 		
+		totalPrecisionat20 = totalPrecisionat20/total;
+		
 		out.write("MAP " + currentMap + "\n");
+		out.write("P@20 " + totalPrecisionat20 + "\n");
 		out.write(sb.toString());
 		out.close();
 	}

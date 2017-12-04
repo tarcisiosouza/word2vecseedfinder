@@ -58,6 +58,7 @@ public class Query
 	private double alpha;
 	private double gama;
 	private double scoreParam;
+	private double precisionAt20;
 	private BufferedWriter bw;
 	private int maxSimTerms;
 	private int maxIter;
@@ -431,11 +432,9 @@ public class Query
 			
 			System.out.println("Precision: "+evaluator.getAvPrecision());
 			queryExpansion.setCurrentQuery(currentQueryString);
-			//queryExpansion.setArticlesWithoutDup(articlesWithoutDuplicates);
+			
 			queryExpansion.setArticles(articles);
-		//	extractEntitiesFromDocuments();
-	//		queryExpansion.extractSimilarTermsUrls();
-				
+		
 			queryExpansion.extractSimilarTermsText(deepLearning,false);
 			nextQuery = queryExpansion.getNextQuery();
 			currentQueryString = addTermsCurrentQuery(currentQueryString,nextQuery);
@@ -474,7 +473,7 @@ public class Query
 		
 		int articleNumber = 1;
 		
-		double higherPrecision = 0;
+		double higherPrecision = 0.0f;
 		StringBuilder sbFinalRes = new StringBuilder ();
 		for (Entry<StringBuilder,Double> s : sbResults.entrySet())
 		{
@@ -486,7 +485,7 @@ public class Query
 			}
 		}
 		
-		higherPrecision = 0;
+		higherPrecision = 0.0f;
 		
 		for (Entry<StringBuilder,Double> s : sbRes.entrySet())
 		{
@@ -497,6 +496,7 @@ public class Query
 				
 			}
 		}
+		precisionAt20 = evaluator.getPrecisionAtn(sbFinalRes, 20);
 		
 	/*	for(Entry<LivingKnowledgeSnapshot, Double> s : finalDocSet.entrySet())
 		{
@@ -537,6 +537,14 @@ public class Query
 			
 		}
 		
+	}
+
+public double getPrecisionAt20() {
+		return precisionAt20;
+	}
+
+	public void setPrecisionAt20(double precisionAt20) {
+		this.precisionAt20 = precisionAt20;
 	}
 
 public LivingKnowledgeEvaluation getEvaluator() {

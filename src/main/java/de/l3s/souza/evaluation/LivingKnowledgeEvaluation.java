@@ -141,7 +141,7 @@ public class LivingKnowledgeEvaluation {
 					if (i<=total)
 					{
 						precision = (double) relevant / i;
-						recall = (double) relevant / totalRelevant;
+						recall = (double) relevant / total;
 						Point point = new Point ();
 						point.setPrecision(precision);
 						point.setRecall(recall);
@@ -157,7 +157,7 @@ public class LivingKnowledgeEvaluation {
 					{
 						relevant++;
 						precision = (double) relevant/i;
-						recall = (double) relevant / totalRelevant;
+						recall = (double) relevant / total;
 						Point point = new Point ();
 						point.setPrecision(precision);
 						point.setRecall(recall);
@@ -175,7 +175,7 @@ public class LivingKnowledgeEvaluation {
 				if (i<=total)
 				{
 					precision = (double) relevant / i;
-					recall = (double) relevant / totalRelevant;
+					recall = (double) relevant / total;
 					Point point = new Point ();
 					point.setPrecision(precision);
 					point.setRecall(recall);
@@ -203,26 +203,30 @@ public class LivingKnowledgeEvaluation {
 		return totalRelevantPRF;
 	}
 
-	public double getPrecisionAtn (HashMap<LivingKnowledgeSnapshot, Double> docs, int total)
+	public double getPrecisionAtn (StringBuilder results, int total)
 	{
 		double precision = 0;
 		
 		int i = 0;
 		int relevant = 0;
-		for (LivingKnowledgeSnapshot s: docs.keySet())
+		StringTokenizer token = new StringTokenizer (results.toString());
+		
+		while (token.hasMoreTokens())
 		{
-			if (i>total)
+			i++;
+			
+			if (i > total)
 				break;
 			
-			String relevance = getArticleRelevance (s.getDocId());
-			
+			String current = token.nextToken();
+			String relevance = getArticleRelevance (current);
 			if (relevance.contentEquals("L1") || (relevance.contentEquals("L2")))
 				relevant++;
-			i++;
+			
+			precision = (double) relevant/total;
+			
 		}
-		
-		precision = (double)relevant/total;
-		
+	
 		return precision;
 	}
 	
