@@ -160,7 +160,7 @@ public class RunApplication {
 				System.out.println("Current topic: "+topic);
 				int number = Integer.parseInt(topic.substring(0,3));
 				
-				if (!topic.contentEquals("003a") )
+			/*	if (!topic.contentEquals("003a") )
 					continue;
 				/*if (number < 50)
 					continue;
