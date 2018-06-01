@@ -473,7 +473,7 @@ public class Query
 		}
 		
 		fitFinalDoc();
-		finalDocSet = urlScoreObject.urlScoreFunction(heidelTime,deepLearning,topicID, eventDate,finalDocSet,Integer.toString(iter),urls,initialQuery);
+		//finalDocSet = urlScoreObject.urlScoreFunction(heidelTime,deepLearning,topicID, eventDate,finalDocSet,Integer.toString(iter),urls,initialQuery);
 		sortFinalDoc();
 	//	evaluateDocuments();
 	//	sortFinalDoc();

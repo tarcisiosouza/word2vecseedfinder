@@ -232,10 +232,13 @@ public class LivingKnowledgeEvaluation {
 	
 	public double getnDCGAtn (StringBuilder results, int total)
 	{
-		double sum = 0.0f;
-		
+		double dcg = 0.0f;
+		double idcg = 0.0f;
 		int i = 0;
 		double relevant = 0.0f;
+		StringBuilder L2ranks = new StringBuilder ();
+		StringBuilder L1ranks = new StringBuilder ();
+		
 		StringTokenizer token = new StringTokenizer (results.toString());
 		
 		while (token.hasMoreTokens())
@@ -250,15 +253,49 @@ public class LivingKnowledgeEvaluation {
 			relevant = 0.0f;
 			
 			if (relevance.contentEquals("L1") )
+			{
+				L1ranks.append(current);
 				relevant = 1.0f;
-			
+			}
 			if ((relevance.contentEquals("L2")))
+			{
+				L2ranks.append(current);
 				relevant = 2.0f;
+			}
 			
-			sum = sum + (Math.pow(2.0, relevant) - 1)/Math.log(1+i);
+			dcg = dcg + (Math.pow(2.0, relevant) - 1)/Math.log(1+i);
 		}
-	
-		return sum/total;
+		
+		i=0;
+		
+		if (L2ranks.length()>0)
+		{
+			StringTokenizer tokenL2ranks = new StringTokenizer (L2ranks.toString());
+			
+			while (tokenL2ranks.hasMoreTokens())
+			{
+				i++;
+				if (i>total)
+					break;
+				idcg = idcg + (Math.pow(2.0, 2.0) - 1)/Math.log(1+i);
+			}
+		}
+		
+		if (L1ranks.length()>0)
+		{
+			StringTokenizer tokenL1ranks = new StringTokenizer (L1ranks.toString());
+			while (tokenL1ranks.hasMoreTokens())
+			{
+				i++;
+				if (i>total)
+					break;
+				idcg = idcg + (Math.pow(2.0, 1.0) - 1)/Math.log(1+i);
+			}
+		}
+		if (idcg==0)
+			return 0;
+		else
+			return dcg/idcg;
 	}
 	
 	public String getArticleRelevance (String docID)
